@@ -18,6 +18,97 @@
             padding: 20px;
         }
 
+        /* Modal de connexion */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .login-modal {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .login-modal h2 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .login-modal input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .login-modal input[type="password"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .login-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s ease;
+        }
+
+        .login-btn:hover {
+            background: #2980b9;
+        }
+
+        .login-error {
+            color: #e74c3c;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .app-content {
+            display: none;
+        }
+
+        .app-content.authenticated {
+            display: block;
+        }
+
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 15px;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -467,7 +558,20 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Modal de connexion -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-modal">
+            <h2>🔒 Accès sécurisé</h2>
+            <p style="color: #666; margin-bottom: 20px;">Checklist POLYSERVICES</p>
+            <input type="password" id="passwordInput" placeholder="Mot de passe" autofocus>
+            <button class="login-btn" onclick="checkPassword()">Se connecter</button>
+            <div id="loginError" class="login-error" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Contenu de l'application -->
+    <div id="appContent" class="app-content">
+        <div class="container">
         <div class="header">
             <div class="title">Checklist POLYSERVICES</div>
             <div class="client-selector">
@@ -476,6 +580,7 @@
                     <option value="">Sélectionner un client</option>
                 </select>
                 <button class="btn" onclick="openClientModal()">Gérer clients</button>
+                <button class="logout-btn" onclick="logout()">Déconnexion</button>
             </div>
         </div>
 
@@ -501,6 +606,7 @@
                 </tbody>
             </table>
         </div>
+    </div>
     </div>
 
     <!-- Modal pour les clients -->
@@ -626,17 +732,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // TEST DE CONNEXION FIRESTORE
-        console.log("🔥 Tentative de connexion à Firestore...");
-        db.collection('test').add({
-            message: 'Test de connexion',
-            timestamp: new Date()
-        }).then(() => {
-            console.log("✅ Firestore connecté avec succès !");
-        }).catch((error) => {
-            console.error("❌ Erreur Firestore:", error);
-        });
-        
         // Données de l'application
         let appData = {
             clients: [],
@@ -658,6 +753,8 @@
 
         // Charger les données depuis Firestore
         async function loadFromFirestore() {
+            if (!isAuthenticated()) return;
+            
             try {
                 const doc = await db.collection('polyservices').doc('appData').get();
                 if (doc.exists) {
@@ -676,9 +773,76 @@
             }
         }
 
-        // Initialisation
+        // Configuration de sécurité
+        const APP_CONFIG = {
+            password: "admin123",  // CHANGEZ CE MOT DE PASSE
+            sessionDuration: 24 * 60 * 60 * 1000 // 24 heures en millisecondes
+        };
+
+        // Gestion de l'authentification
+        function checkPassword() {
+            const inputPassword = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (inputPassword === APP_CONFIG.password) {
+                // Mot de passe correct
+                const expirationTime = Date.now() + APP_CONFIG.sessionDuration;
+                sessionStorage.setItem('polyservices_auth', expirationTime.toString());
+                showApp();
+                errorDiv.style.display = 'none';
+            } else {
+                // Mot de passe incorrect
+                errorDiv.textContent = 'Mot de passe incorrect';
+                errorDiv.style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        function isAuthenticated() {
+            const authTime = sessionStorage.getItem('polyservices_auth');
+            if (!authTime) return false;
+            
+            const expirationTime = parseInt(authTime);
+            if (Date.now() > expirationTime) {
+                sessionStorage.removeItem('polyservices_auth');
+                return false;
+            }
+            
+            return true;
+        }
+
+        function showApp() {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('appContent').classList.add('authenticated');
+        }
+
+        function hideApp() {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('appContent').classList.remove('authenticated');
+        }
+
+        function logout() {
+            sessionStorage.removeItem('polyservices_auth');
+            hideApp();
+            document.getElementById('passwordInput').value = '';
+        }
+
+        // Permettre la connexion avec la touche Entrée
         document.addEventListener('DOMContentLoaded', function() {
-            loadFromFirestore();
+            document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
+
+            // Vérifier l'authentification au chargement
+            if (isAuthenticated()) {
+                showApp();
+                loadFromFirestore();
+            } else {
+                hideApp();
+            }
         });
 
         // Charger des données d'exemple
