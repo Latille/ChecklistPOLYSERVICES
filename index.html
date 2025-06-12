@@ -826,8 +826,7 @@
         let appData = {
             clients: [],
             currentClient: null,
-            dates: [],
-            clientData: {}, // Structure : { clientId: { families: [], operations: [], tasks: {} } }
+            clientData: {}, // Structure : { clientId: { families: [], operations: [], tasks: {}, dates: [] } }
             currentCommentTarget: null
         };
 
@@ -1065,9 +1064,16 @@
         function addDate() {
             const dateInput = document.getElementById('dateInput');
             const date = dateInput.value;
-            if (date && !appData.dates.includes(date)) {
-                appData.dates.push(date);
-                appData.dates.sort();
+            
+            if (!appData.currentClient) {
+                alert('Veuillez sélectionner un client d\'abord');
+                return;
+            }
+            
+            const clientData = getClientData();
+            if (date && !clientData.dates.includes(date)) {
+                clientData.dates.push(date);
+                clientData.dates.sort();
                 dateInput.value = '';
                 updateTable();
                 saveToFirestore(); // Sauvegarder après modification
@@ -1370,13 +1376,14 @@
 
         // Fonction utilitaire pour obtenir les données du client actuel
         function getClientData() {
-            if (!appData.currentClient) return { families: [], operations: [], tasks: {} };
+            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [] };
             
             if (!appData.clientData[appData.currentClient]) {
                 appData.clientData[appData.currentClient] = {
                     families: [],
                     operations: [],
-                    tasks: {}
+                    tasks: {},
+                    dates: []
                 };
             }
             
@@ -1390,9 +1397,19 @@
             const thead = table.querySelector('thead tr');
             const tbody = document.getElementById('checklistBody');
 
+            if (!appData.currentClient) {
+                // Pas de client sélectionné - affichage vide
+                colgroup.innerHTML = '<col style="width: 180px;">';
+                thead.innerHTML = '<th class="operations-column">Opérations à effectuer</th>';
+                tbody.innerHTML = '';
+                return;
+            }
+
+            const clientData = getClientData();
+
             // Mise à jour du colgroup pour forcer les largeurs
             colgroup.innerHTML = '<col style="width: 180px;">';
-            appData.dates.forEach(() => {
+            clientData.dates.forEach(() => {
                 const col = document.createElement('col');
                 col.style.width = '22px';
                 colgroup.appendChild(col);
@@ -1400,7 +1417,7 @@
 
             // Mise à jour de l'en-tête
             thead.innerHTML = '<th class="operations-column">Opérations à effectuer</th>';
-            appData.dates.forEach(date => {
+            clientData.dates.forEach(date => {
                 const th = document.createElement('th');
                 th.className = 'date-column';
                 const dateObj = new Date(date);
@@ -1420,12 +1437,6 @@
 
             // Mise à jour du corps du tableau
             tbody.innerHTML = '';
-            
-            if (!appData.currentClient) {
-                return; // Pas de client sélectionné
-            }
-
-            const clientData = getClientData();
             
             clientData.families.sort((a, b) => a.order - b.order).forEach(family => {
                 // Ligne famille
@@ -1457,7 +1468,7 @@
                 familyRow.appendChild(familyCell);
                 
                 // Cellules vides pour les dates
-                appData.dates.forEach(() => {
+                clientData.dates.forEach(() => {
                     const td = document.createElement('td');
                     td.className = 'date-column';
                     familyRow.appendChild(td);
@@ -1500,7 +1511,7 @@
                     operationRow.appendChild(operationCell);
                     
                     // Cases à cocher pour chaque date
-                    appData.dates.forEach(date => {
+                    clientData.dates.forEach(date => {
                         const td = document.createElement('td');
                         td.className = 'status-cell';
                         
