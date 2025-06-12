@@ -330,6 +330,7 @@
         .family-row:hover .edit-delete-buttons,
         .operation-row:hover .edit-delete-buttons {
             display: flex;
+            z-index: 1000;
         }
 
         .btn-mini {
@@ -342,13 +343,22 @@
         }
 
         .btn-edit {
-            background: #f39c12;
-            color: white;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-edit:hover {
+            background: #f8f9fa;
         }
 
         .btn-delete {
             background: #e74c3c;
             color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
         }
 
         .family-row td,
@@ -1433,8 +1443,8 @@
                 const editDeleteDiv = document.createElement('div');
                 editDeleteDiv.className = 'edit-delete-buttons';
                 editDeleteDiv.innerHTML = `
-                    <button class="btn-mini btn-edit" onclick="editFamily(${family.id})" title="Modifier">✏️</button>
-                    <button class="btn-mini btn-delete" onclick="deleteFamily(${family.id})" title="Supprimer">🗑️</button>
+                    <button class="btn-mini btn-edit" onclick="event.stopPropagation(); editFamily(${family.id})" title="Modifier">✏️</button>
+                    <button class="btn-mini btn-delete" onclick="event.stopPropagation(); deleteFamily(${family.id})" title="Supprimer">🗑️</button>
                 `;
                 familyCell.appendChild(editDeleteDiv);
                 
@@ -1471,6 +1481,15 @@
                     operationCell.dataset.operationId = operation.id;
                     operationCell.dataset.familyId = operation.familyId;
                     operationCell.dataset.type = 'operation';
+                    
+                    // Boutons d'édition et suppression
+                    const editDeleteDiv = document.createElement('div');
+                    editDeleteDiv.className = 'edit-delete-buttons';
+                    editDeleteDiv.innerHTML = `
+                        <button class="btn-mini btn-edit" onclick="event.stopPropagation(); editOperation(${operation.id})" title="Modifier">✏️</button>
+                        <button class="btn-mini btn-delete" onclick="event.stopPropagation(); deleteOperation(${operation.id})" title="Supprimer">🗑️</button>
+                    `;
+                    operationCell.appendChild(editDeleteDiv);
                     
                     // Événements drag & drop pour les opérations
                     operationCell.addEventListener('dragstart', handleDragStart);
@@ -1601,7 +1620,102 @@
             }
         }
 
-        // Gestion du drag & drop
+        // Gestion de l'édition et suppression des familles
+        let currentEditingFamilyId = null;
+        let currentEditingOperationId = null;
+
+        function editFamily(familyId) {
+            const clientData = getClientData();
+            const family = clientData.families.find(f => f.id === familyId);
+            if (family) {
+                currentEditingFamilyId = familyId;
+                document.getElementById('editFamilyName').value = family.name;
+                document.getElementById('editFamilyModal').style.display = 'block';
+            }
+        }
+
+        function saveEditedFamily() {
+            const newName = document.getElementById('editFamilyName').value.trim();
+            if (newName && currentEditingFamilyId) {
+                const clientData = getClientData();
+                const family = clientData.families.find(f => f.id === currentEditingFamilyId);
+                if (family) {
+                    family.name = newName;
+                    updateTable();
+                    closeModal('editFamilyModal');
+                    saveToFirestore();
+                    currentEditingFamilyId = null;
+                }
+            }
+        }
+
+        function deleteFamily(familyId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette famille et toutes ses opérations ?')) {
+                const clientData = getClientData();
+                
+                // Supprimer toutes les opérations de cette famille
+                clientData.operations = clientData.operations.filter(op => op.familyId !== familyId);
+                
+                // Supprimer les tâches associées aux opérations de cette famille
+                for (let taskKey in clientData.tasks) {
+                    const operationId = parseInt(taskKey.split('_')[0]);
+                    const operation = clientData.operations.find(op => op.id === operationId);
+                    if (!operation) {
+                        delete clientData.tasks[taskKey];
+                    }
+                }
+                
+                // Supprimer la famille
+                clientData.families = clientData.families.filter(f => f.id !== familyId);
+                
+                updateTable();
+                saveToFirestore();
+            }
+        }
+
+        function editOperation(operationId) {
+            const clientData = getClientData();
+            const operation = clientData.operations.find(op => op.id === operationId);
+            if (operation) {
+                currentEditingOperationId = operationId;
+                document.getElementById('editOperationName').value = operation.name;
+                document.getElementById('editOperationModal').style.display = 'block';
+            }
+        }
+
+        function saveEditedOperation() {
+            const newName = document.getElementById('editOperationName').value.trim();
+            if (newName && currentEditingOperationId) {
+                const clientData = getClientData();
+                const operation = clientData.operations.find(op => op.id === currentEditingOperationId);
+                if (operation) {
+                    operation.name = newName;
+                    updateTable();
+                    closeModal('editOperationModal');
+                    saveToFirestore();
+                    currentEditingOperationId = null;
+                }
+            }
+        }
+
+        function deleteOperation(operationId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette opération ?')) {
+                const clientData = getClientData();
+                
+                // Supprimer les tâches associées à cette opération
+                for (let taskKey in clientData.tasks) {
+                    if (taskKey.startsWith(operationId + '_')) {
+                        delete clientData.tasks[taskKey];
+                    }
+                }
+                
+                // Supprimer l'opération
+                clientData.operations = clientData.operations.filter(op => op.id !== operationId);
+                
+                updateTable();
+                saveToFirestore();
+            }
+        }
         let draggedElement = null;
         let draggedData = null;
 
