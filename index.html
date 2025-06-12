@@ -626,6 +626,17 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // TEST DE CONNEXION FIRESTORE
+        console.log("🔥 Tentative de connexion à Firestore...");
+        db.collection('test').add({
+            message: 'Test de connexion',
+            timestamp: new Date()
+        }).then(() => {
+            console.log("✅ Firestore connecté avec succès !");
+        }).catch((error) => {
+            console.error("❌ Erreur Firestore:", error);
+        });
+        
         // Données de l'application
         let appData = {
             clients: [],
