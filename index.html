@@ -608,7 +608,24 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    
     <script>
+        // Configuration Firebase - VOTRE VRAIE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBT9_0_aRdmDSD6_kwUZkWS9NLigfN5Zj0",
+            authDomain: "checklistpolyservices.firebaseapp.com",
+            projectId: "checklistpolyservices",
+            storageBucket: "checklistpolyservices.firebasestorage.app",
+            messagingSenderId: "931951101703",
+            appId: "1:931951101703:web:510f946da995dead9367a2"
+        };
+
+        // Initialiser Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // Données de l'application
         let appData = {
             clients: [],
@@ -618,11 +635,39 @@
             currentCommentTarget: null
         };
 
+        // Sauvegarder les données dans Firestore
+        async function saveToFirestore() {
+            try {
+                await db.collection('polyservices').doc('appData').set(appData);
+                console.log('Données sauvegardées dans Firestore');
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde:', error);
+            }
+        }
+
+        // Charger les données depuis Firestore
+        async function loadFromFirestore() {
+            try {
+                const doc = await db.collection('polyservices').doc('appData').get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    appData = { ...appData, ...data };
+                    updateClientSelect();
+                    updateTable();
+                    console.log('Données chargées depuis Firestore');
+                } else {
+                    console.log('Aucune donnée trouvée, chargement des données d\'exemple');
+                    loadSampleData();
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement:', error);
+                loadSampleData();
+            }
+        }
+
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
-            loadSampleData();
-            updateClientSelect();
-            updateTable();
+            loadFromFirestore();
         });
 
         // Charger des données d'exemple
@@ -706,6 +751,7 @@
                 document.getElementById('clientName').value = '';
                 updateClientSelect();
                 updateClientList();
+                saveToFirestore(); // Sauvegarder après modification
             }
         }
 
@@ -727,6 +773,7 @@
             appData.clients = appData.clients.filter(client => client.id !== id);
             updateClientSelect();
             updateClientList();
+            saveToFirestore(); // Sauvegarder après modification
         }
 
         // Gestion des dates
@@ -738,6 +785,7 @@
                 appData.dates.sort();
                 dateInput.value = '';
                 updateTable();
+                saveToFirestore(); // Sauvegarder après modification
             }
         }
 
@@ -760,6 +808,7 @@
                 updateFamilySelect();
                 updateTable();
                 closeModal('familyModal');
+                saveToFirestore(); // Sauvegarder après modification
             } else if (!appData.currentClient) {
                 alert('Veuillez sélectionner un client d\'abord');
             }
@@ -1028,6 +1077,7 @@
                 document.getElementById('familySelect').value = '';
                 updateTable();
                 closeModal('operationModal');
+                saveToFirestore(); // Sauvegarder après modification
             } else if (!appData.currentClient) {
                 alert('Veuillez sélectionner un client d\'abord');
             }
@@ -1228,6 +1278,7 @@
             
             clientData.tasks[taskKey].status = newStatus;
             updateTable();
+            saveToFirestore(); // Sauvegarder après modification
         }
 
         // Gestion des commentaires
@@ -1249,6 +1300,7 @@
                 clientData.tasks[appData.currentCommentTarget].comment = comment;
                 updateTable();
                 closeModal('commentModal');
+                saveToFirestore(); // Sauvegarder après modification
             }
         }
 
@@ -1260,6 +1312,7 @@
                     document.getElementById('commentText').value = '';
                     updateTable();
                     closeModal('commentModal');
+                    saveToFirestore(); // Sauvegarder après modification
                 }
             }
         }
