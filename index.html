@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+function reorderFamilies(draggedId, targetId) {<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -1366,10 +1366,13 @@
                 // Si on visualise actuellement le client de destination, mettre à jour l'affichage
                 if (appData.currentClient === targetClientId) {
                     // Forcer la reconstruction complète du tableau
+                    updateTable();
+                    
+                    // Réattacher les événements drag & drop après un délai
                     setTimeout(() => {
-                        updateTable();
-                        console.log('Tableau mis à jour après transfert');
-                    }, 100);
+                        attachDragDropEvents();
+                        console.log('Drag & drop events reattached after transfer');
+                    }, 200);
                 }
                 
                 closeModal('copyModal');
@@ -1819,7 +1822,28 @@
             draggedData = null;
         }
 
-        function reorderFamilies(draggedId, targetId) {
+        // Fonction pour réattacher les événements drag & drop
+        function attachDragDropEvents() {
+            console.log('Reattaching drag & drop events...');
+            
+            // Supprimer tous les anciens événements et réattacher
+            document.querySelectorAll('.family-row td.operations-column, .operation-row td.operations-column').forEach(cell => {
+                if (cell.dataset.type) {
+                    // Cloner l'élément pour supprimer tous les événements
+                    const newCell = cell.cloneNode(true);
+                    cell.parentNode.replaceChild(newCell, cell);
+                    
+                    // Réattacher les événements drag & drop
+                    newCell.addEventListener('dragstart', handleDragStart);
+                    newCell.addEventListener('dragover', handleDragOver);
+                    newCell.addEventListener('drop', handleDrop);
+                    newCell.addEventListener('dragend', handleDragEnd);
+                    newCell.addEventListener('dragenter', function(e) { e.preventDefault(); });
+                    
+                    console.log('Events reattached for:', newCell.dataset.type, newCell.textContent.trim());
+                }
+            });
+        }
             const clientData = getClientData();
             const draggedFamily = clientData.families.find(f => f.id === draggedId);
             const targetFamily = clientData.families.find(f => f.id === targetId);
