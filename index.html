@@ -1249,7 +1249,8 @@
                 targetData = appData.clientData[targetClientId] = {
                     families: [],
                     operations: [],
-                    tasks: {}
+                    tasks: {},
+                    dates: []
                 };
             }
 
@@ -1257,81 +1258,100 @@
             const familiesMapping = {}; // Pour mapper les anciens IDs aux nouveaux
             let copiedCount = 0;
 
-            // D'abord copier les familles sélectionnées
+            // Collecter les familles et opérations sélectionnées
+            const selectedFamilies = [];
+            const selectedOperations = [];
+
             selectedCheckboxes.forEach(checkbox => {
                 if (checkbox.dataset.type === 'family') {
                     const familyId = parseInt(checkbox.dataset.id);
-                    const originalFamily = sourceData.families.find(f => f.id === familyId);
-                    
-                    if (originalFamily) {
-                        // Vérifier si la famille existe déjà
-                        const existingFamily = targetData.families.find(f => f.name === originalFamily.name);
-                        if (!existingFamily) {
-                            const newFamilyId = Date.now() + Math.random();
-                            const newFamily = {
-                                id: newFamilyId,
-                                name: originalFamily.name,
-                                order: targetData.families.length + 1
-                            };
-                            targetData.families.push(newFamily);
-                            familiesMapping[familyId] = newFamilyId;
-                            copiedCount++;
-                        } else {
-                            familiesMapping[familyId] = existingFamily.id;
-                        }
+                    selectedFamilies.push(familyId);
+                } else if (checkbox.dataset.type === 'operation') {
+                    const operationId = parseInt(checkbox.dataset.id);
+                    selectedOperations.push(operationId);
+                }
+            });
+
+            console.log('Familles sélectionnées:', selectedFamilies);
+            console.log('Opérations sélectionnées:', selectedOperations);
+
+            // Copier SEULEMENT les familles sélectionnées
+            selectedFamilies.forEach(familyId => {
+                const originalFamily = sourceData.families.find(f => f.id === familyId);
+                
+                if (originalFamily) {
+                    // Vérifier si la famille existe déjà
+                    const existingFamily = targetData.families.find(f => f.name === originalFamily.name);
+                    if (!existingFamily) {
+                        const newFamilyId = Date.now() + Math.random();
+                        const newFamily = {
+                            id: newFamilyId,
+                            name: originalFamily.name,
+                            order: targetData.families.length + 1
+                        };
+                        targetData.families.push(newFamily);
+                        familiesMapping[familyId] = newFamilyId;
+                        copiedCount++;
+                        console.log(`Famille copiée: ${originalFamily.name} (${familyId} -> ${newFamilyId})`);
+                    } else {
+                        familiesMapping[familyId] = existingFamily.id;
+                        console.log(`Famille existante utilisée: ${originalFamily.name} (${familyId} -> ${existingFamily.id})`);
                     }
                 }
             });
 
-            // Ensuite copier les opérations sélectionnées
-            selectedCheckboxes.forEach(checkbox => {
-                if (checkbox.dataset.type === 'operation') {
-                    const operationId = parseInt(checkbox.dataset.id);
-                    const familyId = parseInt(checkbox.dataset.familyId);
-                    const originalOperation = sourceData.operations.find(op => op.id === operationId);
+            // Copier SEULEMENT les opérations sélectionnées
+            selectedOperations.forEach(operationId => {
+                const originalOperation = sourceData.operations.find(op => op.id === operationId);
+                
+                if (originalOperation) {
+                    const familyId = originalOperation.familyId;
                     
-                    if (originalOperation) {
-                        // Déterminer l'ID de la famille cible
-                        let targetFamilyId = familiesMapping[familyId];
-                        
-                        if (!targetFamilyId) {
-                            // La famille n'a pas été sélectionnée, vérifier si elle existe déjà
-                            const originalFamily = sourceData.families.find(f => f.id === familyId);
-                            if (originalFamily) {
-                                const existingFamily = targetData.families.find(f => f.name === originalFamily.name);
-                                if (existingFamily) {
-                                    targetFamilyId = existingFamily.id;
-                                } else {
-                                    // Créer la famille automatiquement
-                                    const newFamilyId = Date.now() + Math.random();
-                                    const newFamily = {
-                                        id: newFamilyId,
-                                        name: originalFamily.name,
-                                        order: targetData.families.length + 1
-                                    };
-                                    targetData.families.push(newFamily);
-                                    targetFamilyId = newFamilyId;
-                                    familiesMapping[familyId] = newFamilyId;
-                                }
+                    // Déterminer l'ID de la famille cible
+                    let targetFamilyId = familiesMapping[familyId];
+                    
+                    if (!targetFamilyId) {
+                        // La famille n'a pas été sélectionnée, vérifier si elle existe déjà
+                        const originalFamily = sourceData.families.find(f => f.id === familyId);
+                        if (originalFamily) {
+                            const existingFamily = targetData.families.find(f => f.name === originalFamily.name);
+                            if (existingFamily) {
+                                targetFamilyId = existingFamily.id;
+                                console.log(`Famille parente existante: ${originalFamily.name}`);
+                            } else {
+                                // Créer la famille automatiquement
+                                const newFamilyId = Date.now() + Math.random();
+                                const newFamily = {
+                                    id: newFamilyId,
+                                    name: originalFamily.name,
+                                    order: targetData.families.length + 1
+                                };
+                                targetData.families.push(newFamily);
+                                targetFamilyId = newFamilyId;
+                                familiesMapping[familyId] = newFamilyId;
+                                console.log(`Famille parente créée automatiquement: ${originalFamily.name}`);
                             }
                         }
+                    }
 
-                        if (targetFamilyId) {
-                            // Vérifier si l'opération existe déjà dans cette famille
-                            const existingOperation = targetData.operations.find(op => 
-                                op.familyId === targetFamilyId && op.name === originalOperation.name
-                            );
-                            
-                            if (!existingOperation) {
-                                const newOperation = {
-                                    id: Date.now() + Math.random(),
-                                    familyId: targetFamilyId,
-                                    name: originalOperation.name,
-                                    order: targetData.operations.filter(op => op.familyId === targetFamilyId).length + 1
-                                };
-                                targetData.operations.push(newOperation);
-                                copiedCount++;
-                            }
+                    if (targetFamilyId) {
+                        // Vérifier si l'opération existe déjà dans cette famille
+                        const existingOperation = targetData.operations.find(op => 
+                            op.familyId === targetFamilyId && op.name === originalOperation.name
+                        );
+                        
+                        if (!existingOperation) {
+                            const newOperation = {
+                                id: Date.now() + Math.random(),
+                                familyId: targetFamilyId,
+                                name: originalOperation.name,
+                                order: targetData.operations.filter(op => op.familyId === targetFamilyId).length + 1
+                            };
+                            targetData.operations.push(newOperation);
+                            copiedCount++;
+                            console.log(`Opération copiée: ${originalOperation.name}`);
+                        } else {
+                            console.log(`Opération existante ignorée: ${originalOperation.name}`);
                         }
                     }
                 }
