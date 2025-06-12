@@ -160,6 +160,7 @@
             cursor: pointer;
             font-size: 14px;
             transition: background 0.3s ease;
+            position: relative;
         }
 
         .btn:hover {
@@ -172,6 +173,40 @@
 
         .btn-success:hover {
             background: #229954;
+        }
+
+        .btn-todo {
+            background: #9b59b6;
+            position: relative;
+        }
+
+        .btn-todo:hover {
+            background: #8e44ad;
+        }
+
+        .alert-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid white;
+        }
+
+        .alert-badge.today {
+            background: #f39c12;
+        }
+
+        .alert-badge.none {
+            background: #27ae60;
         }
 
         .controls {
@@ -482,6 +517,22 @@
             overflow-y: auto;
         }
 
+        .modal-content.todo-modal {
+            margin: 3% auto;
+            width: 95%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content.alerts-modal {
+            margin: 10% auto;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
         .copy-form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -522,7 +573,8 @@
         }
 
         .form-group input,
-        .form-group textarea {
+        .form-group textarea,
+        .form-group select {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid #ddd;
@@ -595,6 +647,307 @@
             flex-shrink: 0;
         }
 
+        /* Styles Todo List */
+        .todo-tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .todo-tab {
+            background: #f8f9fa;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            border-radius: 6px 6px 0 0;
+            margin-right: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .todo-tab.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .todo-tab:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .todo-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .filter-btn:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .todo-add-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .todo-add-form input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .todo-add-form select,
+        .todo-add-form input[type="date"] {
+            min-width: 120px;
+        }
+
+        .favorite-btn {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .favorite-btn.active {
+            background: #ffd700;
+            border-color: #ffd700;
+        }
+
+        .todo-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: move;
+        }
+
+        .todo-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .todo-item.dragging {
+            opacity: 0.5;
+            transform: rotate(2deg);
+        }
+
+        .todo-item.drag-over {
+            border-color: #3498db;
+            border-width: 2px;
+        }
+
+        .todo-priority {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .todo-priority.high {
+            background: #e74c3c;
+        }
+
+        .todo-priority.medium {
+            background: #f39c12;
+        }
+
+        .todo-priority.low {
+            background: #27ae60;
+        }
+
+        .todo-favorite {
+            font-size: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .todo-favorite.active {
+            color: #ffd700;
+        }
+
+        .todo-favorite:not(.active) {
+            color: #ddd;
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 14px;
+            margin-right: 12px;
+        }
+
+        .todo-date {
+            color: #666;
+            font-size: 12px;
+            margin-right: 12px;
+            min-width: 80px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .todo-date.overdue {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .todo-date.today {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .todo-archived {
+            opacity: 0.7;
+            background: #f8f9fa;
+        }
+
+        .archived-date {
+            color: #666;
+            font-size: 11px;
+            font-style: italic;
+        }
+
+        /* Styles Alert Dashboard */
+        .alerts-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .alerts-header h2 {
+            color: #e74c3c;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .alerts-header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .client-alerts {
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .client-alerts-header {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 12px 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .client-alerts-header:hover {
+            background: linear-gradient(135deg, #3c4a5e 0%, #34495e 100%);
+        }
+
+        .alert-count {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .client-alerts-content {
+            padding: 15px;
+        }
+
+        .alert-section {
+            margin-bottom: 15px;
+        }
+
+        .alert-section h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .alert-section.overdue h4 {
+            color: #e74c3c;
+        }
+
+        .alert-section.today h4 {
+            color: #f39c12;
+        }
+
+        .alert-task {
+            padding: 8px 12px;
+            margin: 4px 0;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid;
+            font-size: 13px;
+        }
+
+        .alert-task.overdue {
+            border-left-color: #e74c3c;
+            background: #fef2f2;
+        }
+
+        .alert-task.today {
+            border-left-color: #f39c12;
+            background: #fffbf0;
+        }
+
+        .alerts-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .no-alerts {
+            text-align: center;
+            padding: 40px;
+            color: #27ae60;
+            font-size: 18px;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -613,6 +966,26 @@
             .date-column {
                 width: 20px;
             }
+
+            .todo-add-form {
+                flex-direction: column;
+            }
+
+            .todo-add-form input,
+            .todo-add-form select {
+                min-width: auto;
+            }
+
+            .todo-item {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .todo-text {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 8px;
+            }
         }
     </style>
 </head>
@@ -625,6 +998,24 @@
             <input type="password" id="passwordInput" placeholder="Mot de passe" autofocus>
             <button class="login-btn" onclick="checkPassword()">Se connecter</button>
             <div id="loginError" class="login-error" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard d'alertes -->
+    <div id="alertsModal" class="modal">
+        <div class="modal-content alerts-modal">
+            <div class="modal-header">
+                <h3>⚠️ Alertes - Toutes vos tâches urgentes</h3>
+                <span class="close" onclick="closeModal('alertsModal')">&times;</span>
+            </div>
+            <div id="alertsContent">
+                <!-- Contenu généré dynamiquement -->
+            </div>
+            <div class="alerts-actions">
+                <button class="btn" onclick="openTodoModal()">Voir tous les todos</button>
+                <button class="btn" onclick="closeModal('alertsModal')">Fermer</button>
+                <button class="btn" onclick="dismissAlertsForToday()">Ne plus afficher aujourd'hui</button>
+            </div>
         </div>
     </div>
 
@@ -649,6 +1040,10 @@
                 <button class="btn" onclick="openFamilyModal()">Ajouter famille</button>
                 <button class="btn" onclick="openOperationModal()">Ajouter opération</button>
                 <button class="btn" onclick="openCopyModal()" style="background: #9b59b6;">Copier éléments</button>
+                <button class="btn btn-todo" onclick="openTodoModal()" id="todoBtn">
+                    📝 Todo List
+                    <span id="alertBadge" class="alert-badge" style="display: none;">0</span>
+                </button>
             </div>
 
             <div class="checklist-container">
@@ -797,6 +1192,80 @@
         </div>
     </div>
 
+    <!-- Modal Todo List -->
+    <div id="todoModal" class="modal">
+        <div class="modal-content todo-modal">
+            <div class="modal-header">
+                <h3 id="todoModalTitle">📝 Todo List - Sélectionner un client</h3>
+                <span class="close" onclick="closeModal('todoModal')">&times;</span>
+            </div>
+            
+            <!-- Onglets -->
+            <div class="todo-tabs">
+                <button class="todo-tab active" onclick="switchTodoTab('active')" id="tabActive">📋 À faire (0)</button>
+                <button class="todo-tab" onclick="switchTodoTab('archived')" id="tabArchived">📦 Archivées (0)</button>
+            </div>
+
+            <!-- Filtres -->
+            <div class="todo-filters" id="todoFilters">
+                <button class="filter-btn active" onclick="filterTodos('all')" data-filter="all">Tous</button>
+                <button class="filter-btn" onclick="filterTodos('favorites')" data-filter="favorites">⭐ Favoris</button>
+                <button class="filter-btn" onclick="filterTodos('urgent')" data-filter="urgent">🔴 Urgents</button>
+                <button class="filter-btn" onclick="filterTodos('today')" data-filter="today">📅 Aujourd'hui</button>
+            </div>
+
+            <!-- Formulaire d'ajout -->
+            <div class="todo-add-form" id="todoAddForm">
+                <input type="text" id="todoText" placeholder="Nouvelle tâche..." />
+                <select id="todoPriority">
+                    <option value="medium">🟡 Moyenne</option>
+                    <option value="high">🔴 Haute</option>
+                    <option value="low">🟢 Basse</option>
+                </select>
+                <input type="date" id="todoDate" />
+                <button type="button" class="favorite-btn" id="todoFavorite" onclick="toggleAddFavorite()">⭐</button>
+                <button class="btn btn-success" onclick="addTodo()">Ajouter</button>
+            </div>
+
+            <!-- Liste des todos -->
+            <div class="todo-list" id="todoList">
+                <p style="text-align: center; color: #666; padding: 40px;">Sélectionnez un client pour voir ses tâches</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'édition de todo -->
+    <div id="editTodoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Modifier la tâche</h3>
+                <span class="close" onclick="closeModal('editTodoModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="editTodoText">Texte de la tâche :</label>
+                <input type="text" id="editTodoText" placeholder="Texte de la tâche">
+            </div>
+            <div class="form-group">
+                <label for="editTodoPriority">Priorité :</label>
+                <select id="editTodoPriority">
+                    <option value="low">🟢 Basse</option>
+                    <option value="medium">🟡 Moyenne</option>
+                    <option value="high">🔴 Haute</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editTodoDate">Date limite :</label>
+                <input type="date" id="editTodoDate">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="editTodoFavorite"> ⭐ Favori
+                </label>
+            </div>
+            <button class="btn btn-success" onclick="saveEditedTodo()">Sauvegarder</button>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     
@@ -826,7 +1295,12 @@
             clients: [],
             currentClient: null,
             clientData: {},
-            currentCommentTarget: null
+            currentCommentTarget: null,
+            currentTodoTab: 'active',
+            currentTodoFilter: 'all',
+            isAddingFavorite: false,
+            currentEditingTodoId: null,
+            alertsDismissedToday: null
         };
 
         // Gestion de l'authentification
@@ -914,6 +1388,8 @@
             
             updateClientSelect();
             updateTable();
+            updateTodoBadge();
+            checkAndShowAlerts();
         }
 
         // Charger des données d'exemple
@@ -939,7 +1415,12 @@
                     '1_2025-06-15': { status: 'completed', comment: 'Vérification OK' },
                     '2_2025-06-15': { status: 'in-progress', comment: 'En cours' },
                     '3_2025-06-20': { status: 'pending', comment: '' }
-                }
+                },
+                todos: [
+                    { id: 1, text: 'Appeler client urgent', priority: 'high', isFavorite: true, dueDate: '2025-06-10', status: 'active', archivedDate: null, order: 1 },
+                    { id: 2, text: 'Préparer devis XYZ', priority: 'medium', isFavorite: false, dueDate: '2025-06-15', status: 'active', archivedDate: null, order: 2 },
+                    { id: 3, text: 'Idée nouveau service', priority: 'low', isFavorite: true, dueDate: null, status: 'active', archivedDate: null, order: 3 }
+                ]
             };
 
             appData.clientData[2] = {
@@ -954,11 +1435,17 @@
                     { id: 14, familyId: 6, name: 'Désinfection', order: 2 }
                 ],
                 dates: ['2025-05-10', '2025-05-25', '2025-06-10'],
-                tasks: {}
+                tasks: {},
+                todos: [
+                    { id: 21, text: 'Envoyer facture mensuelle', priority: 'high', isFavorite: false, dueDate: '2025-06-09', status: 'active', archivedDate: null, order: 1 },
+                    { id: 22, text: 'Visite technique planifiée', priority: 'medium', isFavorite: true, dueDate: '2025-06-12', status: 'active', archivedDate: null, order: 2 }
+                ]
             };
             
             updateClientSelect();
             updateTable();
+            updateTodoBadge();
+            checkAndShowAlerts();
         }
 
         // Gestion des clients
@@ -1303,7 +1790,8 @@
                     families: [],
                     operations: [],
                     tasks: {},
-                    dates: []
+                    dates: [],
+                    todos: []
                 };
             }
 
@@ -1401,16 +1889,533 @@
             }
         }
 
+        // ============ GESTION TODO LIST ============
+
+        // Fonction utilitaire pour obtenir les todos du client actuel
+        function getClientTodos() {
+            if (!appData.currentClient) return [];
+            const clientData = getClientData();
+            if (!clientData.todos) clientData.todos = [];
+            return clientData.todos;
+        }
+
+        // Ouvrir la modal Todo List
+        function openTodoModal() {
+            document.getElementById('todoModal').style.display = 'block';
+            updateTodoModal();
+        }
+
+        // Mettre à jour la modal Todo
+        function updateTodoModal() {
+            const titleElement = document.getElementById('todoModalTitle');
+            const addForm = document.getElementById('todoAddForm');
+            
+            if (!appData.currentClient) {
+                titleElement.textContent = '📝 Todo List - Sélectionner un client';
+                addForm.style.display = 'none';
+                document.getElementById('todoList').innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Sélectionnez un client pour voir ses tâches</p>';
+                return;
+            }
+
+            const client = appData.clients.find(c => c.id == appData.currentClient);
+            titleElement.textContent = `📝 Todo List - ${client ? client.name : 'Client'}`;
+            addForm.style.display = appData.currentTodoTab === 'active' ? 'flex' : 'none';
+            
+            updateTodoTabs();
+            updateTodoList();
+        }
+
+        // Changer d'onglet (actif/archivé)
+        function switchTodoTab(tab) {
+            appData.currentTodoTab = tab;
+            
+            document.querySelectorAll('.todo-tab').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tab === 'active' ? 'tabActive' : 'tabArchived').classList.add('active');
+            
+            updateTodoModal();
+        }
+
+        // Mettre à jour les onglets avec compteurs
+        function updateTodoTabs() {
+            const todos = getClientTodos();
+            const activeTodos = todos.filter(t => t.status === 'active').length;
+            const archivedTodos = todos.filter(t => t.status === 'archived').length;
+            
+            document.getElementById('tabActive').textContent = `📋 À faire (${activeTodos})`;
+            document.getElementById('tabArchived').textContent = `📦 Archivées (${archivedTodos})`;
+        }
+
+        // Filtrer les todos
+        function filterTodos(filter) {
+            appData.currentTodoFilter = filter;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+            
+            updateTodoList();
+        }
+
+        // Toggle favori dans le formulaire d'ajout
+        function toggleAddFavorite() {
+            appData.isAddingFavorite = !appData.isAddingFavorite;
+            const btn = document.getElementById('todoFavorite');
+            if (appData.isAddingFavorite) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+
+        // Ajouter un todo
+        function addTodo() {
+            const text = document.getElementById('todoText').value.trim();
+            const priority = document.getElementById('todoPriority').value;
+            const dueDate = document.getElementById('todoDate').value || null;
+            
+            if (!text || !appData.currentClient) return;
+            
+            const clientData = getClientData();
+            if (!clientData.todos) clientData.todos = [];
+            
+            const newTodo = {
+                id: Date.now(),
+                text: text,
+                priority: priority,
+                isFavorite: appData.isAddingFavorite,
+                dueDate: dueDate,
+                status: 'active',
+                archivedDate: null,
+                order: clientData.todos.filter(t => t.status === 'active').length + 1
+            };
+            
+            clientData.todos.push(newTodo);
+            
+            // Reset form
+            document.getElementById('todoText').value = '';
+            document.getElementById('todoPriority').value = 'medium';
+            document.getElementById('todoDate').value = '';
+            appData.isAddingFavorite = false;
+            document.getElementById('todoFavorite').classList.remove('active');
+            
+            updateTodoModal();
+            updateTodoBadge();
+            saveToFirestore();
+        }
+
+        // Mettre à jour la liste des todos
+        function updateTodoList() {
+            const todoList = document.getElementById('todoList');
+            const todos = getClientTodos();
+            
+            if (todos.length === 0) {
+                todoList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Aucune tâche pour ce client</p>';
+                return;
+            }
+            
+            // Filtrer selon l'onglet actuel
+            let filteredTodos = todos.filter(todo => todo.status === appData.currentTodoTab);
+            
+            // Appliquer les filtres additionnels
+            if (appData.currentTodoFilter === 'favorites') {
+                filteredTodos = filteredTodos.filter(todo => todo.isFavorite);
+            } else if (appData.currentTodoFilter === 'urgent') {
+                filteredTodos = filteredTodos.filter(todo => todo.priority === 'high');
+            } else if (appData.currentTodoFilter === 'today') {
+                const today = new Date().toISOString().split('T')[0];
+                filteredTodos = filteredTodos.filter(todo => todo.dueDate === today);
+            }
+            
+            // Trier par priorité puis par ordre
+            filteredTodos.sort((a, b) => {
+                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+                if (priorityDiff !== 0) return priorityDiff;
+                return a.order - b.order;
+            });
+            
+            if (filteredTodos.length === 0) {
+                todoList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Aucune tâche correspondant aux filtres</p>';
+                return;
+            }
+            
+            todoList.innerHTML = '';
+            filteredTodos.forEach(todo => {
+                const todoElement = createTodoElement(todo);
+                todoList.appendChild(todoElement);
+            });
+        }
+
+        // Créer un élément todo HTML
+        function createTodoElement(todo) {
+            const div = document.createElement('div');
+            div.className = `todo-item ${todo.status === 'archived' ? 'todo-archived' : ''}`;
+            div.draggable = todo.status === 'active';
+            div.dataset.todoId = todo.id;
+            
+            const priorityClass = todo.priority;
+            const favoriteClass = todo.isFavorite ? 'active' : '';
+            
+            let dateDisplay = '';
+            let dateClass = '';
+            if (todo.dueDate) {
+                const dueDate = new Date(todo.dueDate);
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                
+                if (todo.dueDate < todayStr) {
+                    dateClass = 'overdue';
+                    const diffTime = today - dueDate;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    dateDisplay = `il y a ${diffDays}j`;
+                } else if (todo.dueDate === todayStr) {
+                    dateClass = 'today';
+                    dateDisplay = 'Aujourd\'hui';
+                } else {
+                    dateDisplay = dueDate.toLocaleDateString('fr-FR');
+                }
+            } else {
+                dateDisplay = '--/--';
+            }
+            
+            let archivedInfo = '';
+            if (todo.status === 'archived' && todo.archivedDate) {
+                const archivedDate = new Date(todo.archivedDate);
+                archivedInfo = `<div class="archived-date">📦 Archivée le ${archivedDate.toLocaleDateString('fr-FR')}</div>`;
+            }
+            
+            div.innerHTML = `
+                <div class="todo-priority ${priorityClass}"></div>
+                <div class="todo-favorite ${favoriteClass}" onclick="toggleTodoFavorite(${todo.id})">⭐</div>
+                <div class="todo-text">
+                    ${todo.text}
+                    ${archivedInfo}
+                </div>
+                <div class="todo-date ${dateClass}">${dateDisplay}</div>
+                <div class="todo-actions">
+                    ${todo.status === 'active' ? `<button class="btn-mini btn-edit" onclick="archiveTodo(${todo.id})" title="Archiver">✅</button>` : ''}
+                    ${todo.status === 'archived' ? `<button class="btn-mini btn-edit" onclick="unarchiveTodo(${todo.id})" title="Désarchiver">🔄</button>` : ''}
+                    <button class="btn-mini btn-edit" onclick="editTodo(${todo.id})" title="Modifier">✏️</button>
+                    <button class="btn-mini btn-delete" onclick="deleteTodo(${todo.id})" title="Supprimer">🗑️</button>
+                </div>
+            `;
+            
+            // Ajouter les événements de drag & drop pour les todos actifs
+            if (todo.status === 'active') {
+                div.addEventListener('dragstart', handleTodoDragStart);
+                div.addEventListener('dragover', handleTodoDragOver);
+                div.addEventListener('drop', handleTodoDrop);
+                div.addEventListener('dragend', handleTodoDragEnd);
+            }
+            
+            return div;
+        }
+
+        // Toggle favori d'un todo
+        function toggleTodoFavorite(todoId) {
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                todo.isFavorite = !todo.isFavorite;
+                updateTodoModal();
+                updateTodoBadge();
+                saveToFirestore();
+            }
+        }
+
+        // Archiver un todo
+        function archiveTodo(todoId) {
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                todo.status = 'archived';
+                todo.archivedDate = new Date().toISOString().split('T')[0];
+                updateTodoModal();
+                updateTodoBadge();
+                saveToFirestore();
+            }
+        }
+
+        // Désarchiver un todo
+        function unarchiveTodo(todoId) {
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                todo.status = 'active';
+                todo.archivedDate = null;
+                updateTodoModal();
+                updateTodoBadge();
+                saveToFirestore();
+            }
+        }
+
+        // Éditer un todo
+        function editTodo(todoId) {
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                appData.currentEditingTodoId = todoId;
+                document.getElementById('editTodoText').value = todo.text;
+                document.getElementById('editTodoPriority').value = todo.priority;
+                document.getElementById('editTodoDate').value = todo.dueDate || '';
+                document.getElementById('editTodoFavorite').checked = todo.isFavorite;
+                document.getElementById('editTodoModal').style.display = 'block';
+            }
+        }
+
+        // Sauvegarder l'édition d'un todo
+        function saveEditedTodo() {
+            if (!appData.currentEditingTodoId) return;
+            
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === appData.currentEditingTodoId);
+            if (todo) {
+                todo.text = document.getElementById('editTodoText').value.trim();
+                todo.priority = document.getElementById('editTodoPriority').value;
+                todo.dueDate = document.getElementById('editTodoDate').value || null;
+                todo.isFavorite = document.getElementById('editTodoFavorite').checked;
+                
+                updateTodoModal();
+                updateTodoBadge();
+                closeModal('editTodoModal');
+                saveToFirestore();
+                appData.currentEditingTodoId = null;
+            }
+        }
+
+        // Supprimer un todo
+        function deleteTodo(todoId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+                const clientData = getClientData();
+                clientData.todos = clientData.todos.filter(t => t.id !== todoId);
+                updateTodoModal();
+                updateTodoBadge();
+                saveToFirestore();
+            }
+        }
+
+        // Gestion du drag & drop pour les todos
+        let draggedTodoElement = null;
+        let draggedTodoId = null;
+
+        function handleTodoDragStart(e) {
+            draggedTodoElement = e.target;
+            draggedTodoId = parseInt(e.target.dataset.todoId);
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleTodoDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const target = e.target.closest('.todo-item');
+            if (target && target !== draggedTodoElement) {
+                document.querySelectorAll('.todo-item').forEach(el => el.classList.remove('drag-over'));
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleTodoDrop(e) {
+            e.preventDefault();
+            const target = e.target.closest('.todo-item');
+            
+            if (target && target !== draggedTodoElement && draggedTodoId) {
+                const targetTodoId = parseInt(target.dataset.todoId);
+                reorderTodos(draggedTodoId, targetTodoId);
+            }
+            
+            document.querySelectorAll('.todo-item').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        function handleTodoDragEnd(e) {
+            if (draggedTodoElement) {
+                draggedTodoElement.classList.remove('dragging');
+            }
+            document.querySelectorAll('.todo-item').forEach(el => el.classList.remove('drag-over'));
+            draggedTodoElement = null;
+            draggedTodoId = null;
+        }
+
+        // Réorganiser les todos
+        function reorderTodos(draggedId, targetId) {
+            const todos = getClientTodos();
+            const draggedTodo = todos.find(t => t.id === draggedId);
+            const targetTodo = todos.find(t => t.id === targetId);
+            
+            if (draggedTodo && targetTodo && draggedTodo.status === 'active' && targetTodo.status === 'active') {
+                const draggedOrder = draggedTodo.order;
+                const targetOrder = targetTodo.order;
+                
+                if (draggedOrder < targetOrder) {
+                    todos.forEach(todo => {
+                        if (todo.status === 'active' && todo.order > draggedOrder && todo.order <= targetOrder) {
+                            todo.order--;
+                        }
+                    });
+                } else {
+                    todos.forEach(todo => {
+                        if (todo.status === 'active' && todo.order >= targetOrder && todo.order < draggedOrder) {
+                            todo.order++;
+                        }
+                    });
+                }
+                
+                draggedTodo.order = targetOrder;
+                updateTodoList();
+                saveToFirestore();
+            }
+        }
+
+        // Mettre à jour le badge d'alertes
+        function updateTodoBadge() {
+            const alerts = calculateAllAlerts();
+            const totalAlerts = Object.values(alerts).reduce((sum, client) => sum + client.count, 0);
+            
+            const badge = document.getElementById('alertBadge');
+            if (totalAlerts > 0) {
+                badge.textContent = totalAlerts;
+                badge.style.display = 'flex';
+                
+                // Changer la couleur selon l'urgence
+                const hasOverdue = Object.values(alerts).some(client => client.overdue.length > 0);
+                const hasToday = Object.values(alerts).some(client => client.today.length > 0);
+                
+                badge.className = 'alert-badge';
+                if (hasOverdue) {
+                    badge.classList.add('overdue');
+                } else if (hasToday) {
+                    badge.classList.add('today');
+                } else {
+                    badge.classList.add('none');
+                }
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Calculer toutes les alertes
+        function calculateAllAlerts() {
+            let alerts = {};
+            const today = new Date().toISOString().split('T')[0];
+            
+            for (let clientId in appData.clientData) {
+                let clientAlerts = {
+                    overdue: [],
+                    today: [],
+                    count: 0
+                };
+                
+                const todos = appData.clientData[clientId].todos || [];
+                todos.filter(todo => todo.status === 'active' && todo.dueDate).forEach(todo => {
+                    if (todo.dueDate < today) {
+                        clientAlerts.overdue.push(todo);
+                    } else if (todo.dueDate === today) {
+                        clientAlerts.today.push(todo);
+                    }
+                });
+                
+                clientAlerts.count = clientAlerts.overdue.length + clientAlerts.today.length;
+                
+                if (clientAlerts.count > 0) {
+                    alerts[clientId] = clientAlerts;
+                }
+            }
+            
+            return alerts;
+        }
+
+        // Vérifier et afficher les alertes au démarrage
+        function checkAndShowAlerts() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Vérifier si les alertes ont déjà été dismissées aujourd'hui
+            if (appData.alertsDismissedToday === today) {
+                return;
+            }
+            
+            const alerts = calculateAllAlerts();
+            if (Object.keys(alerts).length > 0) {
+                showAlertsModal(alerts);
+            }
+        }
+
+        // Afficher le modal d'alertes
+        function showAlertsModal(alerts) {
+            const alertsContent = document.getElementById('alertsContent');
+            alertsContent.innerHTML = '';
+            
+            if (Object.keys(alerts).length === 0) {
+                alertsContent.innerHTML = '<div class="no-alerts">🎉 Aucune tâche urgente ! Vous êtes à jour.</div>';
+            } else {
+                Object.entries(alerts).forEach(([clientId, clientAlerts]) => {
+                    const client = appData.clients.find(c => c.id == clientId);
+                    const clientName = client ? client.name : 'Client inconnu';
+                    
+                    const clientDiv = document.createElement('div');
+                    clientDiv.className = 'client-alerts';
+                    clientDiv.innerHTML = `
+                        <div class="client-alerts-header" onclick="selectClientAndOpenTodos(${clientId})">
+                            <span>📋 ${clientName}</span>
+                            <span class="alert-count">${clientAlerts.count} alertes</span>
+                        </div>
+                        <div class="client-alerts-content">
+                            ${clientAlerts.overdue.length > 0 ? `
+                                <div class="alert-section overdue">
+                                    <h4>🔴 EN RETARD (${clientAlerts.overdue.length})</h4>
+                                    ${clientAlerts.overdue.map(todo => {
+                                        const dueDate = new Date(todo.dueDate);
+                                        const today = new Date();
+                                        const diffTime = today - dueDate;
+                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                        return `<div class="alert-task overdue">- ${todo.text} (il y a ${diffDays} jour${diffDays > 1 ? 's' : ''})</div>`;
+                                    }).join('')}
+                                </div>
+                            ` : ''}
+                            ${clientAlerts.today.length > 0 ? `
+                                <div class="alert-section today">
+                                    <h4>🟡 AUJOURD'HUI (${clientAlerts.today.length})</h4>
+                                    ${clientAlerts.today.map(todo => `<div class="alert-task today">- ${todo.text}</div>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    
+                    alertsContent.appendChild(clientDiv);
+                });
+            }
+            
+            document.getElementById('alertsModal').style.display = 'block';
+        }
+
+        // Sélectionner un client et ouvrir ses todos depuis le dashboard
+        function selectClientAndOpenTodos(clientId) {
+            appData.currentClient = clientId;
+            document.getElementById('clientSelect').value = clientId;
+            updateTable();
+            updateTodoBadge();
+            closeModal('alertsModal');
+            openTodoModal();
+        }
+
+        // Dismisser les alertes pour aujourd'hui
+        function dismissAlertsForToday() {
+            const today = new Date().toISOString().split('T')[0];
+            appData.alertsDismissedToday = today;
+            closeModal('alertsModal');
+            saveToFirestore();
+        }
+
         // Fonction utilitaire
         function getClientData() {
-            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [] };
+            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [] };
             
             if (!appData.clientData[appData.currentClient]) {
                 appData.clientData[appData.currentClient] = {
                     families: [],
                     operations: [],
                     tasks: {},
-                    dates: []
+                    dates: [],
+                    todos: []
                 };
             }
             
@@ -1777,6 +2782,24 @@
         document.getElementById('clientSelect').addEventListener('change', function() {
             appData.currentClient = this.value;
             updateTable();
+            updateTodoBadge();
+            updateTodoModal();
+        });
+
+        // Gestion des événements clavier
+        document.addEventListener('keydown', function(e) {
+            // Fermer les modals avec Escape
+            if (e.key === 'Escape') {
+                const openModals = document.querySelectorAll('.modal[style*="display: block"]');
+                openModals.forEach(modal => {
+                    modal.style.display = 'none';
+                });
+            }
+            
+            // Ajouter todo avec Enter dans le formulaire
+            if (e.key === 'Enter' && e.target.id === 'todoText') {
+                addTodo();
+            }
         });
 
         // Initialisation
@@ -1806,6 +2829,13 @@
                 }
             });
         }
+
+        // Fonction pour vérifier périodiquement les alertes (optionnel)
+        setInterval(() => {
+            if (isAuthenticated()) {
+                updateTodoBadge();
+            }
+        }, 60000); // Vérifier toutes les minutes
     </script>
 </body>
 </html>
