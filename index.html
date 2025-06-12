@@ -790,6 +790,10 @@
                 sessionStorage.setItem('polyservices_auth', expirationTime.toString());
                 showApp();
                 errorDiv.style.display = 'none';
+                // Charger les données après connexion
+                setTimeout(() => {
+                    loadFromFirestore();
+                }, 100);
             } else {
                 // Mot de passe incorrect
                 errorDiv.textContent = 'Mot de passe incorrect';
@@ -839,7 +843,10 @@
             // Vérifier l'authentification au chargement
             if (isAuthenticated()) {
                 showApp();
-                loadFromFirestore();
+                // Petite attente pour s'assurer que l'interface est prête
+                setTimeout(() => {
+                    loadFromFirestore();
+                }, 100);
             } else {
                 hideApp();
             }
