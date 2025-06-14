@@ -582,6 +582,14 @@
             font-size: 14px;
         }
 
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+        }
+
         .form-group textarea {
             height: 80px;
             resize: vertical;
@@ -1299,24 +1307,34 @@
                 <label for="editTodoText">Texte de la tâche :</label>
                 <input type="text" id="editTodoText" placeholder="Texte de la tâche">
             </div>
-            <div class="form-group">
-                <label for="editTodoPriority">Priorité :</label>
-                <select id="editTodoPriority">
-                    <option value="low">🟢 Basse</option>
-                    <option value="medium">🟡 Moyenne</option>
-                    <option value="high">🔴 Haute</option>
-                </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="editTodoPriority">Priorité :</label>
+                    <select id="editTodoPriority">
+                        <option value="low">🟢 Basse</option>
+                        <option value="medium">🟡 Moyenne</option>
+                        <option value="high">🔴 Haute</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editTodoDate">Date limite :</label>
+                    <input type="date" id="editTodoDate">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="editTodoDate">Date limite :</label>
-                <input type="date" id="editTodoDate">
-            </div>
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="editTodoFavorite"> ⭐ Favori
+            <div class="form-group" style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
+                    <input type="checkbox" id="editTodoFavorite" style="margin-right: 10px; transform: scale(1.2);"> 
+                    <span style="font-size: 18px; margin-right: 8px;">⭐</span>
+                    Marquer comme favori
                 </label>
+                <small style="color: #666; font-style: italic; margin-left: 38px; display: block; margin-top: 4px;">
+                    Les tâches favorites sont mises en évidence et peuvent être filtrées rapidement
+                </small>
             </div>
-            <button class="btn btn-success" onclick="saveEditedTodo()">Sauvegarder</button>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-success" onclick="saveEditedTodo()">Sauvegarder</button>
+                <button class="btn" onclick="closeModal('editTodoModal')" style="margin-left: 10px;">Annuler</button>
+            </div>
         </div>
     </div>
 
@@ -1352,7 +1370,7 @@
             currentCommentTarget: null,
             currentTodoTab: 'active',
             currentTodoFilter: 'all',
-            isAddingFavorite: false,
+            isAddingFavorite: false, // Explicitement initialisé à false
             currentEditingTodoId: null,
             alertsDismissedToday: null
         };
@@ -2011,6 +2029,11 @@
 
         // Toggle favori dans le formulaire d'ajout
         function toggleAddFavorite() {
+            // S'assurer que la variable est bien définie
+            if (appData.isAddingFavorite === undefined) {
+                appData.isAddingFavorite = false;
+            }
+            
             appData.isAddingFavorite = !appData.isAddingFavorite;
             const btn = document.getElementById('todoFavorite');
             if (appData.isAddingFavorite) {
@@ -2031,11 +2054,14 @@
             const clientData = getClientData();
             if (!clientData.todos) clientData.todos = [];
             
+            // S'assurer que isAddingFavorite est bien défini et pas undefined
+            const isFavorite = appData.isAddingFavorite === true;
+            
             const newTodo = {
                 id: Date.now(),
                 text: text,
                 priority: priority,
-                isFavorite: appData.isAddingFavorite,
+                isFavorite: isFavorite,
                 dueDate: dueDate,
                 status: 'active',
                 archivedDate: null,
@@ -2048,7 +2074,7 @@
             document.getElementById('todoText').value = '';
             document.getElementById('todoPriority').value = 'medium';
             document.getElementById('todoDate').value = '';
-            appData.isAddingFavorite = false;
+            appData.isAddingFavorite = false; // Remettre explicitement à false
             document.getElementById('todoFavorite').classList.remove('active');
             
             updateTodoModal();
