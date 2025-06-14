@@ -1352,8 +1352,8 @@
                 </div>
             </div>
             <div class="form-group" style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-top: 10px;">
-                <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
-                    <input type="checkbox" id="editTodoFavorite" style="margin-right: 10px; transform: scale(1.2);"> 
+                <label for="editTodoFavoriteCheck" style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
+                    <input type="checkbox" id="editTodoFavoriteCheck" style="margin-right: 10px; transform: scale(1.2);"> 
                     <span style="font-size: 18px; margin-right: 8px;">⭐</span>
                     Marquer comme favori
                 </label>
@@ -2041,9 +2041,12 @@
 
         // Ouvrir la modal Todo List
         function openTodoModal() {
+            console.log('🚀 openTodoModal() appelée');
+            
             // Synchroniser avec la sélection de client principal
             const clientSelect = document.getElementById('clientSelect');
             appData.currentClient = clientSelect.value || null;
+            console.log('👤 Client actuel:', appData.currentClient);
             
             document.getElementById('todoModal').style.display = 'block';
             
@@ -2177,25 +2180,35 @@
 
         // Mettre à jour la liste des todos
         function updateTodoList() {
+            console.log('🔄 updateTodoList() appelée');
+            
             const todoList = document.getElementById('todoList');
             const todos = getClientTodos();
             
+            console.log('📋 Nombre de todos trouvés:', todos.length);
+            console.log('📋 Todos complets:', todos);
+            
             if (todos.length === 0) {
                 todoList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Aucune tâche pour ce client</p>';
+                console.log('❌ Aucune tâche à afficher');
                 return;
             }
             
             // Filtrer selon l'onglet actuel
             let filteredTodos = todos.filter(todo => todo.status === appData.currentTodoTab);
+            console.log('🔍 Todos après filtre onglet:', filteredTodos.length);
             
             // Appliquer les filtres additionnels
             if (appData.currentTodoFilter === 'favorites') {
                 filteredTodos = filteredTodos.filter(todo => todo.isFavorite === true);
+                console.log('⭐ Todos après filtre favoris:', filteredTodos.length);
             } else if (appData.currentTodoFilter === 'urgent') {
                 filteredTodos = filteredTodos.filter(todo => todo.priority === 'high');
+                console.log('🔴 Todos après filtre urgent:', filteredTodos.length);
             } else if (appData.currentTodoFilter === 'today') {
                 const today = new Date().toISOString().split('T')[0];
                 filteredTodos = filteredTodos.filter(todo => todo.dueDate === today);
+                console.log('📅 Todos après filtre aujourd\'hui:', filteredTodos.length);
             }
             
             // Trier par priorité puis par ordre
@@ -2216,11 +2229,14 @@
                     message = 'Aucune tâche prévue pour aujourd\'hui';
                 }
                 todoList.innerHTML = `<p style="text-align: center; color: #666; padding: 40px;">${message}</p>`;
+                console.log('❌ Aucune tâche après filtres');
                 return;
             }
             
+            console.log('✅ Création des éléments pour', filteredTodos.length, 'todos');
             todoList.innerHTML = '';
-            filteredTodos.forEach(todo => {
+            filteredTodos.forEach((todo, index) => {
+                console.log(`🏗️ Création élément ${index + 1}:`, todo);
                 const todoElement = createTodoElement(todo);
                 todoList.appendChild(todoElement);
             });
@@ -2357,7 +2373,7 @@
                 
                 // Correction : vérifier strictement l'état favori
                 const isFavorite = todo.isFavorite === true;
-                document.getElementById('editTodoFavorite').checked = isFavorite;
+                document.getElementById('editTodoFavoriteCheck').checked = isFavorite;
                 
                 document.getElementById('editTodoModal').style.display = 'block';
             }
@@ -2373,7 +2389,7 @@
                 todo.text = document.getElementById('editTodoText').value.trim();
                 todo.priority = document.getElementById('editTodoPriority').value;
                 todo.dueDate = document.getElementById('editTodoDate').value || null;
-                todo.isFavorite = document.getElementById('editTodoFavorite').checked;
+                todo.isFavorite = document.getElementById('editTodoFavoriteCheck').checked;
                 
                 updateTodoModal();
                 updateTodoBadge();
