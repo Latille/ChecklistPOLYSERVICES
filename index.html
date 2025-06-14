@@ -789,10 +789,18 @@
         }
 
         .todo-favorite {
-            font-size: 18px;
-            margin-right: 8px;
+            font-size: 20px;
+            margin-right: 12px;
             cursor: pointer;
             flex-shrink: 0;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .todo-favorite:hover {
+            background: #f8f9fa;
+            transform: scale(1.1);
         }
 
         .todo-favorite.active {
@@ -803,29 +811,47 @@
             color: #ddd;
         }
 
-        .todo-text {
+        .todo-content {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-right: 12px;
+        }
+
+        .todo-text {
             font-size: 14px;
-            margin-right: 12px;
+            margin-bottom: 4px;
+            font-weight: 500;
         }
 
-        .todo-date {
-            color: #666;
+        .todo-date-info {
             font-size: 12px;
-            margin-right: 12px;
-            min-width: 80px;
-            text-align: center;
-            flex-shrink: 0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .todo-date.overdue {
+        .todo-date-info .date-label {
+            color: #999;
+        }
+
+        .todo-date-info .date-value {
+            font-weight: 500;
+        }
+
+        .todo-date-info .date-value.overdue {
             color: #e74c3c;
             font-weight: bold;
         }
 
-        .todo-date.today {
+        .todo-date-info .date-value.today {
             color: #f39c12;
             font-weight: bold;
+        }
+
+        .todo-date-info .date-value.upcoming {
+            color: #27ae60;
         }
 
         .todo-actions {
@@ -977,14 +1003,42 @@
             }
 
             .todo-item {
-                flex-wrap: wrap;
-                gap: 8px;
+                padding: 10px;
+                margin: 6px 0;
+            }
+
+            .todo-content {
+                margin-right: 8px;
             }
 
             .todo-text {
-                width: 100%;
-                margin-right: 0;
-                margin-bottom: 8px;
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+
+            .todo-date-info {
+                font-size: 11px;
+            }
+
+            .todo-favorite {
+                font-size: 18px;
+                margin-right: 8px;
+            }
+
+            .todo-priority {
+                width: 16px;
+                height: 16px;
+                margin-right: 8px;
+            }
+
+            .todo-actions {
+                flex-direction: column;
+                gap: 3px;
+            }
+
+            .btn-mini {
+                font-size: 10px;
+                padding: 3px 5px;
             }
         }
     </style>
@@ -1417,9 +1471,9 @@
                     '3_2025-06-20': { status: 'pending', comment: '' }
                 },
                 todos: [
-                    { id: 1, text: 'Appeler client urgent', priority: 'high', isFavorite: true, dueDate: '2025-06-10', status: 'active', archivedDate: null, order: 1 },
+                    { id: 1, text: 'Appeler client urgent', priority: 'high', isFavorite: false, dueDate: '2025-06-10', status: 'active', archivedDate: null, order: 1 },
                     { id: 2, text: 'Préparer devis XYZ', priority: 'medium', isFavorite: false, dueDate: '2025-06-15', status: 'active', archivedDate: null, order: 2 },
-                    { id: 3, text: 'Idée nouveau service', priority: 'low', isFavorite: true, dueDate: null, status: 'active', archivedDate: null, order: 3 }
+                    { id: 3, text: 'Idée nouveau service', priority: 'low', isFavorite: false, dueDate: null, status: 'active', archivedDate: null, order: 3 }
                 ]
             };
 
@@ -1438,7 +1492,7 @@
                 tasks: {},
                 todos: [
                     { id: 21, text: 'Envoyer facture mensuelle', priority: 'high', isFavorite: false, dueDate: '2025-06-09', status: 'active', archivedDate: null, order: 1 },
-                    { id: 22, text: 'Visite technique planifiée', priority: 'medium', isFavorite: true, dueDate: '2025-06-12', status: 'active', archivedDate: null, order: 2 }
+                    { id: 22, text: 'Visite technique planifiée', priority: 'medium', isFavorite: false, dueDate: '2025-06-12', status: 'active', archivedDate: null, order: 2 }
                 ]
             };
             
@@ -2017,7 +2071,7 @@
             
             // Appliquer les filtres additionnels
             if (appData.currentTodoFilter === 'favorites') {
-                filteredTodos = filteredTodos.filter(todo => todo.isFavorite);
+                filteredTodos = filteredTodos.filter(todo => todo.isFavorite === true);
             } else if (appData.currentTodoFilter === 'urgent') {
                 filteredTodos = filteredTodos.filter(todo => todo.priority === 'high');
             } else if (appData.currentTodoFilter === 'today') {
@@ -2034,7 +2088,15 @@
             });
             
             if (filteredTodos.length === 0) {
-                todoList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Aucune tâche correspondant aux filtres</p>';
+                let message = 'Aucune tâche correspondant aux filtres';
+                if (appData.currentTodoFilter === 'favorites') {
+                    message = 'Aucune tâche favorite. Cliquez sur ⭐ pour marquer vos tâches importantes !';
+                } else if (appData.currentTodoFilter === 'urgent') {
+                    message = 'Aucune tâche urgente (priorité haute)';
+                } else if (appData.currentTodoFilter === 'today') {
+                    message = 'Aucune tâche prévue pour aujourd\'hui';
+                }
+                todoList.innerHTML = `<p style="text-align: center; color: #666; padding: 40px;">${message}</p>`;
                 return;
             }
             
@@ -2055,8 +2117,11 @@
             const priorityClass = todo.priority;
             const favoriteClass = todo.isFavorite ? 'active' : '';
             
+            // Calculer l'affichage de la date
             let dateDisplay = '';
             let dateClass = '';
+            let dateStatus = '';
+            
             if (todo.dueDate) {
                 const dueDate = new Date(todo.dueDate);
                 const today = new Date();
@@ -2064,17 +2129,23 @@
                 
                 if (todo.dueDate < todayStr) {
                     dateClass = 'overdue';
+                    dateStatus = 'overdue';
                     const diffTime = today - dueDate;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    dateDisplay = `il y a ${diffDays}j`;
+                    dateDisplay = `En retard de ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
                 } else if (todo.dueDate === todayStr) {
                     dateClass = 'today';
-                    dateDisplay = 'Aujourd\'hui';
+                    dateStatus = 'today';
+                    dateDisplay = 'À faire aujourd\'hui';
                 } else {
-                    dateDisplay = dueDate.toLocaleDateString('fr-FR');
+                    dateClass = 'upcoming';
+                    dateStatus = 'upcoming';
+                    dateDisplay = `Échéance: ${dueDate.toLocaleDateString('fr-FR')}`;
                 }
             } else {
-                dateDisplay = '--/--';
+                dateDisplay = 'Aucune échéance';
+                dateClass = '';
+                dateStatus = 'none';
             }
             
             let archivedInfo = '';
@@ -2086,16 +2157,19 @@
             div.innerHTML = `
                 <div class="todo-priority ${priorityClass}"></div>
                 <div class="todo-favorite ${favoriteClass}" onclick="toggleTodoFavorite(${todo.id})">⭐</div>
-                <div class="todo-text">
-                    ${todo.text}
+                <div class="todo-content">
+                    <div class="todo-text">${todo.text}</div>
+                    <div class="todo-date-info">
+                        <span class="date-label">📅</span>
+                        <span class="date-value ${dateClass}">${dateDisplay}</span>
+                    </div>
                     ${archivedInfo}
                 </div>
-                <div class="todo-date ${dateClass}">${dateDisplay}</div>
                 <div class="todo-actions">
-                    ${todo.status === 'active' ? `<button class="btn-mini btn-edit" onclick="archiveTodo(${todo.id})" title="Archiver">✅</button>` : ''}
-                    ${todo.status === 'archived' ? `<button class="btn-mini btn-edit" onclick="unarchiveTodo(${todo.id})" title="Désarchiver">🔄</button>` : ''}
-                    <button class="btn-mini btn-edit" onclick="editTodo(${todo.id})" title="Modifier">✏️</button>
-                    <button class="btn-mini btn-delete" onclick="deleteTodo(${todo.id})" title="Supprimer">🗑️</button>
+                    ${todo.status === 'active' ? `<button class="btn-mini btn-edit" onclick="event.stopPropagation(); archiveTodo(${todo.id})" title="Archiver">✅</button>` : ''}
+                    ${todo.status === 'archived' ? `<button class="btn-mini btn-edit" onclick="event.stopPropagation(); unarchiveTodo(${todo.id})" title="Désarchiver">🔄</button>` : ''}
+                    <button class="btn-mini btn-edit" onclick="event.stopPropagation(); editTodo(${todo.id})" title="Modifier">✏️</button>
+                    <button class="btn-mini btn-delete" onclick="event.stopPropagation(); deleteTodo(${todo.id})" title="Supprimer">🗑️</button>
                 </div>
             `;
             
@@ -2112,6 +2186,7 @@
 
         // Toggle favori d'un todo
         function toggleTodoFavorite(todoId) {
+            event.stopPropagation(); // Empêcher le drag and drop
             const todos = getClientTodos();
             const todo = todos.find(t => t.id === todoId);
             if (todo) {
