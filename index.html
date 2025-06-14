@@ -520,7 +520,7 @@
         .modal-content.todo-modal {
             margin: 3% auto;
             width: 95%;
-            max-width: 900px;
+            max-width: 1200px;
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -721,8 +721,8 @@
         }
 
         .todo-add-form input[type="text"] {
-            flex: 1;
-            min-width: 200px;
+            width: 500px;
+            min-width: 500px;
         }
 
         .todo-add-form select,
@@ -1008,6 +1008,12 @@
             .todo-add-form input,
             .todo-add-form select {
                 min-width: auto;
+                width: 100%;
+            }
+
+            .todo-add-form input[type="text"] {
+                width: 100%;
+                min-width: auto;
             }
 
             .todo-item {
@@ -1280,9 +1286,9 @@
             <div class="todo-add-form" id="todoAddForm">
                 <input type="text" id="todoText" placeholder="Nouvelle tâche..." />
                 <select id="todoPriority">
+                    <option value="low">🟢 Basse</option>
                     <option value="medium">🟡 Moyenne</option>
                     <option value="high">🔴 Haute</option>
-                    <option value="low">🟢 Basse</option>
                 </select>
                 <input type="date" id="todoDate" />
                 <button type="button" class="favorite-btn" id="todoFavorite" onclick="toggleAddFavorite()">⭐</button>
@@ -1974,6 +1980,12 @@
         // Ouvrir la modal Todo List
         function openTodoModal() {
             document.getElementById('todoModal').style.display = 'block';
+            
+            // S'assurer que les valeurs par défaut sont correctes
+            document.getElementById('todoPriority').value = 'low';
+            appData.isAddingFavorite = false;
+            document.getElementById('todoFavorite').classList.remove('active');
+            
             updateTodoModal();
         }
 
@@ -1984,8 +1996,14 @@
             
             if (!appData.currentClient) {
                 titleElement.textContent = '📝 Todo List - Sélectionner un client';
-                addForm.style.display = 'none';
-                document.getElementById('todoList').innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Sélectionnez un client pour voir ses tâches</p>';
+                addForm.style.display = 'flex'; // Afficher le formulaire même sans client
+                
+                // Réinitialiser les onglets et filtres pour un état vierge
+                document.getElementById('tabActive').textContent = '📋 À faire (0)';
+                document.getElementById('tabArchived').textContent = '📦 Archivées (0)';
+                
+                // Affichage vierge
+                document.getElementById('todoList').innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Sélectionnez un client pour voir et gérer ses tâches</p>';
                 return;
             }
 
@@ -2049,7 +2067,15 @@
             const priority = document.getElementById('todoPriority').value;
             const dueDate = document.getElementById('todoDate').value || null;
             
-            if (!text || !appData.currentClient) return;
+            if (!text) {
+                alert('Veuillez saisir le texte de la tâche');
+                return;
+            }
+            
+            if (!appData.currentClient) {
+                alert('Veuillez sélectionner un client avant d\'ajouter une tâche');
+                return;
+            }
             
             const clientData = getClientData();
             if (!clientData.todos) clientData.todos = [];
@@ -2072,7 +2098,7 @@
             
             // Reset form
             document.getElementById('todoText').value = '';
-            document.getElementById('todoPriority').value = 'medium';
+            document.getElementById('todoPriority').value = 'low'; // Priorité basse par défaut
             document.getElementById('todoDate').value = '';
             appData.isAddingFavorite = false; // Remettre explicitement à false
             document.getElementById('todoFavorite').classList.remove('active');
