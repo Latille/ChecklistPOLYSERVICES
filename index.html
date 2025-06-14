@@ -148,7 +148,16 @@
             background: white;
             color: #2c3e50;
             font-size: 14px;
-            min-width: 150px;
+            min-width: 200px;
+        }
+
+        .client-selector select option.overdue {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .client-selector select option.normal {
+            color: #2c3e50;
         }
 
         .btn {
@@ -509,6 +518,11 @@
             max-width: 500px;
         }
 
+        .modal-content.edit-todo-modal {
+            width: 90%;
+            max-width: 900px;
+        }
+
         .modal-content.copy-modal {
             margin: 5% auto;
             width: 90%;
@@ -520,7 +534,7 @@
         .modal-content.todo-modal {
             margin: 3% auto;
             width: 95%;
-            max-width: 1200px;
+            max-width: 1300px;
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -721,8 +735,8 @@
         }
 
         .todo-add-form input[type="text"] {
-            width: 500px;
-            min-width: 500px;
+            width: 800px;
+            min-width: 800px;
         }
 
         .todo-add-form select,
@@ -804,6 +818,11 @@
             padding: 4px;
             border-radius: 4px;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
         }
 
         .todo-favorite:hover {
@@ -811,12 +830,17 @@
             transform: scale(1.1);
         }
 
-        .todo-favorite.active {
-            color: #ffd700;
+        .todo-favorite.square {
+            background: white;
+            border: 2px solid #ffd700;
+            border-radius: 3px;
+            font-size: 0; /* Masquer le contenu texte pour le carré */
         }
 
-        .todo-favorite:not(.active) {
-            color: #ddd;
+        .todo-favorite.star {
+            background: none;
+            border: none;
+            font-size: 20px;
         }
 
         .todo-content {
@@ -1014,6 +1038,7 @@
             .todo-add-form input[type="text"] {
                 width: 100%;
                 min-width: auto;
+                max-width: 100%;
             }
 
             .todo-item {
@@ -1080,7 +1105,6 @@
                 <!-- Contenu généré dynamiquement -->
             </div>
             <div class="alerts-actions">
-                <button class="btn" onclick="openTodoModal()">Voir tous les todos</button>
                 <button class="btn" onclick="closeModal('alertsModal')">Fermer</button>
                 <button class="btn" onclick="dismissAlertsForToday()">Ne plus afficher aujourd'hui</button>
             </div>
@@ -1304,14 +1328,14 @@
 
     <!-- Modal d'édition de todo -->
     <div id="editTodoModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content edit-todo-modal">
             <div class="modal-header">
                 <h3>Modifier la tâche</h3>
                 <span class="close" onclick="closeModal('editTodoModal')">&times;</span>
             </div>
             <div class="form-group">
                 <label for="editTodoText">Texte de la tâche :</label>
-                <input type="text" id="editTodoText" placeholder="Texte de la tâche">
+                <input type="text" id="editTodoText" placeholder="Texte de la tâche" style="height: 64px; padding: 16px 12px; line-height: 1.4;">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div class="form-group">
@@ -1526,18 +1550,56 @@
             checkAndShowAlerts();
         }
 
+        // Calculer les tâches en retard par client
+        function calculateOverdueTasksByClient() {
+            const overdueByClient = {};
+            const today = new Date().toISOString().split('T')[0];
+            
+            for (let clientId in appData.clientData) {
+                const todos = appData.clientData[clientId].todos || [];
+                const overdueTodos = todos.filter(todo => 
+                    todo.status === 'active' && 
+                    todo.dueDate && 
+                    todo.dueDate < today
+                );
+                overdueByClient[clientId] = overdueTodos.length;
+            }
+            
+            return overdueByClient;
+        }
+
         // Gestion des clients
         function updateClientSelect() {
             const select = document.getElementById('clientSelect');
+            const currentSelection = select.value; // Sauvegarder la sélection actuelle
             select.innerHTML = '<option value="">Sélectionner un client</option>';
+            
+            // Calculer les tâches en retard par client
+            const overdueByClient = calculateOverdueTasksByClient();
             
             const sortedClients = [...appData.clients].sort((a, b) => a.name.localeCompare(b.name));
             sortedClients.forEach(client => {
                 const option = document.createElement('option');
                 option.value = client.id;
-                option.textContent = client.name;
+                
+                const overdueCount = overdueByClient[client.id] || 0;
+                if (overdueCount > 0) {
+                    option.textContent = `${client.name} (🔴 ${overdueCount} en retard)`;
+                    option.className = 'overdue';
+                    option.style.color = '#e74c3c';
+                    option.style.fontWeight = 'bold';
+                } else {
+                    option.textContent = client.name;
+                    option.className = 'normal';
+                }
+                
                 select.appendChild(option);
             });
+            
+            // Restaurer la sélection précédente si elle existe encore
+            if (currentSelection && appData.clients.find(c => c.id == currentSelection)) {
+                select.value = currentSelection;
+            }
         }
 
         function openClientModal() {
@@ -1979,6 +2041,10 @@
 
         // Ouvrir la modal Todo List
         function openTodoModal() {
+            // Synchroniser avec la sélection de client principal
+            const clientSelect = document.getElementById('clientSelect');
+            appData.currentClient = clientSelect.value || null;
+            
             document.getElementById('todoModal').style.display = 'block';
             
             // S'assurer que les valeurs par défaut sont correctes
@@ -1994,16 +2060,17 @@
             const titleElement = document.getElementById('todoModalTitle');
             const addForm = document.getElementById('todoAddForm');
             
-            if (!appData.currentClient) {
-                titleElement.textContent = '📝 Todo List - Sélectionner un client';
-                addForm.style.display = 'flex'; // Afficher le formulaire même sans client
+            // Vérifier si aucun client n'est sélectionné
+            if (!appData.currentClient || appData.currentClient === "" || appData.currentClient === null) {
+                titleElement.textContent = '📝 Todo List - Aucun client sélectionné';
+                addForm.style.display = 'flex'; // Afficher le formulaire pour permettre la sélection
                 
-                // Réinitialiser les onglets et filtres pour un état vierge
+                // Réinitialiser les onglets pour un état vierge
                 document.getElementById('tabActive').textContent = '📋 À faire (0)';
                 document.getElementById('tabArchived').textContent = '📦 Archivées (0)';
                 
-                // Affichage vierge
-                document.getElementById('todoList').innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Sélectionnez un client pour voir et gérer ses tâches</p>';
+                // Affichage vierge - aucune tâche
+                document.getElementById('todoList').innerHTML = '<p style="text-align: center; color: #666; padding: 40px; font-size: 16px;">🔍 Sélectionnez d\'abord un client dans le menu déroulant principal<br><small style="color: #999;">Vous pourrez ensuite gérer les tâches de ce client</small></p>';
                 return;
             }
 
@@ -2048,11 +2115,8 @@
         // Toggle favori dans le formulaire d'ajout
         function toggleAddFavorite() {
             // S'assurer que la variable est bien définie
-            if (appData.isAddingFavorite === undefined) {
-                appData.isAddingFavorite = false;
-            }
+            appData.isAddingFavorite = appData.isAddingFavorite === true ? false : true;
             
-            appData.isAddingFavorite = !appData.isAddingFavorite;
             const btn = document.getElementById('todoFavorite');
             if (appData.isAddingFavorite) {
                 btn.classList.add('active');
@@ -2080,7 +2144,7 @@
             const clientData = getClientData();
             if (!clientData.todos) clientData.todos = [];
             
-            // S'assurer que isAddingFavorite est bien défini et pas undefined
+            // Force isFavorite à false par défaut, sauf si explicitement activé
             const isFavorite = appData.isAddingFavorite === true;
             
             const newTodo = {
@@ -2096,15 +2160,18 @@
             
             clientData.todos.push(newTodo);
             
-            // Reset form
+            // Reset form avec valeurs par défaut
             document.getElementById('todoText').value = '';
-            document.getElementById('todoPriority').value = 'low'; // Priorité basse par défaut
+            document.getElementById('todoPriority').value = 'low';
             document.getElementById('todoDate').value = '';
-            appData.isAddingFavorite = false; // Remettre explicitement à false
+            
+            // Reset du favori - force à false
+            appData.isAddingFavorite = false;
             document.getElementById('todoFavorite').classList.remove('active');
             
             updateTodoModal();
             updateTodoBadge();
+            updateClientSelect(); // Mettre à jour la liste des clients
             saveToFirestore();
         }
 
@@ -2245,6 +2312,7 @@
                 todo.isFavorite = !todo.isFavorite;
                 updateTodoModal();
                 updateTodoBadge();
+                updateClientSelect(); // Mettre à jour la liste des clients
                 saveToFirestore();
             }
         }
@@ -2258,6 +2326,7 @@
                 todo.archivedDate = new Date().toISOString().split('T')[0];
                 updateTodoModal();
                 updateTodoBadge();
+                updateClientSelect(); // Mettre à jour la liste des clients
                 saveToFirestore();
             }
         }
@@ -2271,6 +2340,7 @@
                 todo.archivedDate = null;
                 updateTodoModal();
                 updateTodoBadge();
+                updateClientSelect(); // Mettre à jour la liste des clients
                 saveToFirestore();
             }
         }
@@ -2284,7 +2354,11 @@
                 document.getElementById('editTodoText').value = todo.text;
                 document.getElementById('editTodoPriority').value = todo.priority;
                 document.getElementById('editTodoDate').value = todo.dueDate || '';
-                document.getElementById('editTodoFavorite').checked = todo.isFavorite;
+                
+                // Correction : vérifier strictement l'état favori
+                const isFavorite = todo.isFavorite === true;
+                document.getElementById('editTodoFavorite').checked = isFavorite;
+                
                 document.getElementById('editTodoModal').style.display = 'block';
             }
         }
@@ -2303,6 +2377,7 @@
                 
                 updateTodoModal();
                 updateTodoBadge();
+                updateClientSelect(); // Mettre à jour la liste des clients
                 closeModal('editTodoModal');
                 saveToFirestore();
                 appData.currentEditingTodoId = null;
@@ -2316,6 +2391,7 @@
                 clientData.todos = clientData.todos.filter(t => t.id !== todoId);
                 updateTodoModal();
                 updateTodoBadge();
+                updateClientSelect(); // Mettre à jour la liste des clients
                 saveToFirestore();
             }
         }
@@ -2961,8 +3037,9 @@
         setInterval(() => {
             if (isAuthenticated()) {
                 updateTodoBadge();
+                updateClientSelect(); // Mettre à jour aussi la liste des clients
             }
-        }, 60000); // Vérifier toutes les minutes
+        }, 300000); // Vérifier toutes les 5 minutes (300000ms)
     </script>
 </body>
 </html>
