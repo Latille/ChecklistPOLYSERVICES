@@ -1585,8 +1585,1657 @@
             checkAndShowAlerts();
         }
 
-        // ... [Le reste du JavaScript continue avec toutes les fonctions]
-        // [J'ai dû couper ici à cause de la limite de caractères]
+        // Calculer les tâches en retard par client
+        function calculateOverdueTasksByClient() {
+            const overdueByClient = {};
+            const today = new Date().toISOString().split('T')[0];
+            
+            for (let clientId in appData.clientData) {
+                const todos = appData.clientData[clientId].todos || [];
+                const overdueTodos = todos.filter(todo => 
+                    todo.status === 'active' && 
+                    todo.dueDate && 
+                    todo.dueDate < today
+                );
+                overdueByClient[clientId] = overdueTodos.length;
+            }
+            
+            return overdueByClient;
+        }
+
+        // Gestion des clients
+        function updateClientSelect() {
+            const select = document.getElementById('clientSelect');
+            const currentSelection = select.value;
+            select.innerHTML = '<option value="">Sélectionner un client</option>';
+            
+            const overdueByClient = calculateOverdueTasksByClient();
+            
+            // Filtrer pour afficher seulement les clients actifs
+            const activeClients = appData.clients.filter(client => client.status !== 'archived');
+            const sortedClients = [...activeClients].sort((a, b) => a.name.localeCompare(b.name));
+            
+            sortedClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                
+                const overdueCount = overdueByClient[client.id] || 0;
+                if (overdueCount > 0) {
+                    option.textContent = `${client.name} (🔴 ${overdueCount} en retard)`;
+                    option.className = 'overdue';
+                    option.style.color = '#e74c3c';
+                    option.style.fontWeight = 'bold';
+                } else {
+                    option.textContent = client.name;
+                    option.className = 'normal';
+                }
+                
+                select.appendChild(option);
+            });
+            
+            if (currentSelection && activeClients.find(c => c.id == currentSelection)) {
+                select.value = currentSelection;
+            }
+        }
+
+        function deleteClient(id) {
+            if (!canDeleteClient(id)) {
+                alert('Impossible de supprimer ce client car il contient des données (dates, tâches, opérations...).\n\nVous pouvez l\'archiver pour le retirer de la liste principale tout en conservant ses données.');
+                return;
+            }
+            
+            if (confirm('Êtes-vous sûr de vouloir supprimer définitivement ce client ? Cette action est irréversible.')) {
+                appData.clients = appData.clients.filter(client => client.id !== id);
+                
+                // Nettoyer les données si elles existent
+                if (appData.clientData[id]) {
+                    delete appData.clientData[id];
+                }
+                
+                // Si le client supprimé était sélectionné, le désélectionner
+                if (appData.currentClient == id) {
+                    appData.currentClient = null;
+                    document.getElementById('clientSelect').value = '';
+                    updateTable();
+                    updateTodoBadge();
+                }
+                
+                updateClientSelect();
+                updateClientList();
+                updateClientTabs();
+                saveToFirestore();
+            }
+        }
+
+        function openClientModal() {
+            document.getElementById('clientModal').style.display = 'block';
+            appData.currentClientTab = 'active'; // Réinitialiser sur l'onglet actifs
+            switchClientTab('active');
+            updateClientTabs();
+            updateClientList();
+        }
+
+        function addClient() {
+            const name = document.getElementById('clientName').value.trim();
+            if (name) {
+                const newClient = { 
+                    id: Date.now(), 
+                    name: name,
+                    status: 'active'
+                };
+                appData.clients.push(newClient);
+                document.getElementById('clientName').value = '';
+                updateClientSelect();
+                updateClientList();
+                updateClientTabs();
+                saveToFirestore();
+            }
+        }
+
+        function switchClientTab(tab) {
+            appData.currentClientTab = tab;
+            
+            document.querySelectorAll('#clientModal .todo-tab').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tab === 'active' ? 'tabActiveClients' : 'tabArchivedClients').classList.add('active');
+            
+            // Afficher/masquer le formulaire d'ajout
+            document.getElementById('addClientForm').style.display = tab === 'active' ? 'block' : 'none';
+            
+            updateClientList();
+        }
+
+        function updateClientTabs() {
+            const activeClients = appData.clients.filter(c => c.status !== 'archived').length;
+            const archivedClients = appData.clients.filter(c => c.status === 'archived').length;
+            
+            document.getElementById('tabActiveClients').textContent = `👤 Clients actifs (${activeClients})`;
+            document.getElementById('tabArchivedClients').textContent = `📦 Clients archivés (${archivedClients})`;
+        }
+
+        function updateClientList() {
+            const list = document.getElementById('clientList');
+            list.innerHTML = '';
+            
+            // Filtrer selon l'onglet actuel
+            const filteredClients = appData.clients.filter(client => {
+                if (appData.currentClientTab === 'active') {
+                    return client.status !== 'archived';
+                } else {
+                    return client.status === 'archived';
+                }
+            });
+
+            if (filteredClients.length === 0) {
+                const message = appData.currentClientTab === 'active' 
+                    ? 'Aucun client actif' 
+                    : 'Aucun client archivé';
+                list.innerHTML = `<p style="text-align: center; color: #666; padding: 20px;">${message}</p>`;
+                return;
+            }
+            
+            filteredClients.forEach(client => {
+                const div = document.createElement('div');
+                const isArchived = client.status === 'archived';
+                
+                div.style.cssText = `
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: center; 
+                    padding: 12px; 
+                    border: 1px solid #ddd; 
+                    margin: 8px 0; 
+                    border-radius: 6px;
+                    ${isArchived ? 'background: #f8f9fa; opacity: 0.8;' : 'background: white;'}
+                `;
+                
+                div.innerHTML = `
+                    <span style="${isArchived ? 'color: #666; font-style: italic;' : 'color: #2c3e50;'}">
+                        ${isArchived ? '📦 ' : ''}${client.name}
+                    </span>
+                    <div style="display: flex; gap: 5px;">
+                        ${generateClientButtons(client)}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function generateClientButtons(client) {
+            const isArchived = client.status === 'archived';
+            
+            if (isArchived) {
+                return `
+                    <button class="btn" style="background: #3498db; padding: 4px 8px; font-size: 12px;" onclick="consultClient(${client.id})">Consulter</button>
+                    <button class="btn" style="background: #27ae60; padding: 4px 8px; font-size: 12px;" onclick="restoreClient(${client.id})">Restaurer</button>
+                `;
+            } else {
+                const canDelete = canDeleteClient(client.id);
+                return `
+                    <button class="btn" style="background: #3498db; padding: 4px 8px; font-size: 12px;" onclick="editClient(${client.id})">Modifier</button>
+                    <button class="btn" style="background: #f39c12; padding: 4px 8px; font-size: 12px;" onclick="archiveClient(${client.id})">Archiver</button>
+                    ${canDelete ? 
+                        `<button class="btn" style="background: #e74c3c; padding: 4px 8px; font-size: 12px;" onclick="deleteClient(${client.id})">Supprimer</button>` : 
+                        `<button class="btn" style="background: #95a5a6; padding: 4px 8px; font-size: 12px;" disabled title="Client contient des données">Supprimer</button>`
+                    }
+                `;
+            }
+        }
+
+        function canDeleteClient(clientId) {
+            const clientData = appData.clientData[clientId];
+            if (!clientData) return true; // Pas de données = suppression possible
+            
+            // Vérifier s'il y a des dates, des familles, des opérations ou des todos
+            const hasDates = clientData.dates && clientData.dates.length > 0;
+            const hasFamilies = clientData.families && clientData.families.length > 0;
+            const hasOperations = clientData.operations && clientData.operations.length > 0;
+            const hasTodos = clientData.todos && clientData.todos.length > 0;
+            const hasTasks = clientData.tasks && Object.keys(clientData.tasks).length > 0;
+            
+            return !(hasDates || hasFamilies || hasOperations || hasTodos || hasTasks);
+        }
+
+        function archiveClient(clientId) {
+            if (confirm('Êtes-vous sûr de vouloir archiver ce client ? Il sera retiré de la liste principale mais ses données seront conservées.')) {
+                const client = appData.clients.find(c => c.id === clientId);
+                if (client) {
+                    client.status = 'archived';
+                    
+                    // Si le client archivé était sélectionné, le désélectionner
+                    if (appData.currentClient == clientId) {
+                        appData.currentClient = null;
+                        document.getElementById('clientSelect').value = '';
+                        updateTable();
+                        updateTodoBadge();
+                    }
+                    
+                    updateClientSelect();
+                    updateClientList();
+                    updateClientTabs();
+                    saveToFirestore();
+                }
+            }
+        }
+
+        function restoreClient(clientId) {
+            if (confirm('Êtes-vous sûr de vouloir restaurer ce client ? Il redeviendra disponible dans la liste principale.')) {
+                const client = appData.clients.find(c => c.id === clientId);
+                if (client) {
+                    client.status = 'active';
+                    updateClientSelect();
+                    updateClientList();
+                    updateClientTabs();
+                    saveToFirestore();
+                }
+            }
+        }
+
+        function consultClient(clientId) {
+            const client = appData.clients.find(c => c.id === clientId);
+            if (client) {
+                // Temporairement définir comme client actuel pour consultation
+                const previousClient = appData.currentClient;
+                appData.currentClient = clientId;
+                
+                // Ouvrir un modal d'information ou rediriger vers une vue consultation
+                alert(`Consultation de "${client.name}"\n\nFonctionnalité de consultation en mode lecture seule à venir.\n\nPour l'instant, vous pouvez restaurer le client pour accéder à ses données.`);
+                
+                // Restaurer le client précédent
+                appData.currentClient = previousClient;
+            }
+        }
+
+        // Variables pour l'édition de client
+        let currentEditingClientId = null;
+
+        function editClient(clientId) {
+            const client = appData.clients.find(c => c.id === clientId);
+            if (client) {
+                currentEditingClientId = clientId;
+                document.getElementById('editClientName').value = client.name;
+                document.getElementById('editClientModal').style.display = 'block';
+            }
+        }
+
+        function saveEditedClient() {
+            const newName = document.getElementById('editClientName').value.trim();
+            if (newName && currentEditingClientId) {
+                const client = appData.clients.find(c => c.id === currentEditingClientId);
+                if (client) {
+                    client.name = newName;
+                    updateClientSelect();
+                    updateClientList();
+                    closeModal('editClientModal');
+                    saveToFirestore();
+                    currentEditingClientId = null;
+                }
+            }
+        }
+
+        // Gestion des dates
+        function addDate() {
+            const dateInput = document.getElementById('dateInput');
+            const date = dateInput.value;
+            
+            if (!appData.currentClient) {
+                alert('Veuillez sélectionner un client d\'abord');
+                return;
+            }
+            
+            const clientData = getClientData();
+            if (date && !clientData.dates.includes(date)) {
+                clientData.dates.push(date);
+                clientData.dates.sort();
+                dateInput.value = '';
+                updateTable();
+                saveToFirestore();
+            }
+        }
+
+        // Gestion des familles
+        function openFamilyModal() {
+            document.getElementById('familyModal').style.display = 'block';
+        }
+
+        function addFamily() {
+            const name = document.getElementById('familyName').value.trim();
+            if (name && appData.currentClient) {
+                const clientData = getClientData();
+                const newFamily = {
+                    id: Date.now(),
+                    name: name,
+                    order: clientData.families.length + 1
+                };
+                clientData.families.push(newFamily);
+                document.getElementById('familyName').value = '';
+                updateFamilySelect();
+                updateTable();
+                closeModal('familyModal');
+                saveToFirestore();
+            } else if (!appData.currentClient) {
+                alert('Veuillez sélectionner un client d\'abord');
+            }
+        }
+
+        function updateFamilySelect() {
+            const select = document.getElementById('familySelect');
+            select.innerHTML = '<option value="">Sélectionner une famille</option>';
+            if (appData.currentClient) {
+                const clientData = getClientData();
+                clientData.families.forEach(family => {
+                    const option = document.createElement('option');
+                    option.value = family.id;
+                    option.textContent = family.name;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        // Gestion des opérations
+        function openOperationModal() {
+            updateFamilySelect();
+            document.getElementById('operationModal').style.display = 'block';
+        }
+
+        function addOperation() {
+            const familyId = parseInt(document.getElementById('familySelect').value);
+            const name = document.getElementById('operationName').value.trim();
+            
+            if (familyId && name && appData.currentClient) {
+                const clientData = getClientData();
+                const newOperation = {
+                    id: Date.now(),
+                    familyId: familyId,
+                    name: name,
+                    order: clientData.operations.filter(op => op.familyId === familyId).length + 1
+                };
+                clientData.operations.push(newOperation);
+                document.getElementById('operationName').value = '';
+                document.getElementById('familySelect').value = '';
+                updateTable();
+                closeModal('operationModal');
+                saveToFirestore();
+            } else if (!appData.currentClient) {
+                alert('Veuillez sélectionner un client d\'abord');
+            }
+        }
+
+        // Édition des familles et opérations
+        let currentEditingFamilyId = null;
+        let currentEditingOperationId = null;
+
+        function editFamily(familyId) {
+            const clientData = getClientData();
+            const family = clientData.families.find(f => f.id === familyId);
+            if (family) {
+                currentEditingFamilyId = familyId;
+                document.getElementById('editFamilyName').value = family.name;
+                document.getElementById('editFamilyModal').style.display = 'block';
+            }
+        }
+
+        function saveEditedFamily() {
+            const newName = document.getElementById('editFamilyName').value.trim();
+            if (newName && currentEditingFamilyId) {
+                const clientData = getClientData();
+                const family = clientData.families.find(f => f.id === currentEditingFamilyId);
+                if (family) {
+                    family.name = newName;
+                    updateTable();
+                    closeModal('editFamilyModal');
+                    saveToFirestore();
+                    currentEditingFamilyId = null;
+                }
+            }
+        }
+
+        function deleteFamily(familyId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette famille et toutes ses opérations ?')) {
+                const clientData = getClientData();
+                clientData.operations = clientData.operations.filter(op => op.familyId !== familyId);
+                for (let taskKey in clientData.tasks) {
+                    const operationId = parseInt(taskKey.split('_')[0]);
+                    if (!clientData.operations.find(op => op.id === operationId)) {
+                        delete clientData.tasks[taskKey];
+                    }
+                }
+                clientData.families = clientData.families.filter(f => f.id !== familyId);
+                updateTable();
+                saveToFirestore();
+            }
+        }
+
+        function editOperation(operationId) {
+            const clientData = getClientData();
+            const operation = clientData.operations.find(op => op.id === operationId);
+            if (operation) {
+                currentEditingOperationId = operationId;
+                document.getElementById('editOperationName').value = operation.name;
+                document.getElementById('editOperationModal').style.display = 'block';
+            }
+        }
+
+        function saveEditedOperation() {
+            const newName = document.getElementById('editOperationName').value.trim();
+            if (newName && currentEditingOperationId) {
+                const clientData = getClientData();
+                const operation = clientData.operations.find(op => op.id === currentEditingOperationId);
+                if (operation) {
+                    operation.name = newName;
+                    updateTable();
+                    closeModal('editOperationModal');
+                    saveToFirestore();
+                    currentEditingOperationId = null;
+                }
+            }
+        }
+
+        function deleteOperation(operationId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette opération ?')) {
+                const clientData = getClientData();
+                for (let taskKey in clientData.tasks) {
+                    if (taskKey.startsWith(operationId + '_')) {
+                        delete clientData.tasks[taskKey];
+                    }
+                }
+                clientData.operations = clientData.operations.filter(op => op.id !== operationId);
+                updateTable();
+                saveToFirestore();
+            }
+        }
+
+        // Gestion de la copie
+        function openCopyModal() {
+            document.getElementById('copyModal').style.display = 'block';
+            updateCopyClientSelects();
+        }
+
+        function updateCopyClientSelects() {
+            const sourceSelect = document.getElementById('sourceClientSelect');
+            const targetSelect = document.getElementById('targetClientSelect');
+            
+            // Filtrer pour afficher seulement les clients actifs
+            const activeClients = appData.clients.filter(client => client.status !== 'archived');
+            const sortedClients = [...activeClients].sort((a, b) => a.name.localeCompare(b.name));
+            
+            [sourceSelect, targetSelect].forEach(select => {
+                select.innerHTML = '<option value="">Sélectionner un client</option>';
+                sortedClients.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.id;
+                    option.textContent = client.name;
+                    select.appendChild(option);
+                });
+            });
+
+            sourceSelect.addEventListener('change', updateCopyElementsList);
+        }
+
+        function updateCopyElementsList() {
+            const sourceClientId = document.getElementById('sourceClientSelect').value;
+            const listContainer = document.getElementById('copyElementsList');
+            
+            if (!sourceClientId) {
+                listContainer.innerHTML = '<p style="text-align: center; color: #666;">Sélectionnez d\'abord un client source</p>';
+                return;
+            }
+
+            const sourceData = appData.clientData[sourceClientId];
+            if (!sourceData || (!sourceData.families.length && !sourceData.operations.length)) {
+                listContainer.innerHTML = '<p style="text-align: center; color: #666;">Aucun élément à copier pour ce client</p>';
+                return;
+            }
+
+            listContainer.innerHTML = '';
+
+            sourceData.families.sort((a, b) => a.order - b.order).forEach(family => {
+                const familyDiv = document.createElement('div');
+                familyDiv.className = 'copy-item family';
+                familyDiv.innerHTML = `
+                    <input type="checkbox" id="family_${family.id}" data-type="family" data-id="${family.id}">
+                    <label for="family_${family.id}">${family.name}</label>
+                `;
+                listContainer.appendChild(familyDiv);
+
+                const operations = sourceData.operations
+                    .filter(op => op.familyId === family.id)
+                    .sort((a, b) => a.order - b.order);
+
+                operations.forEach(operation => {
+                    const operationDiv = document.createElement('div');
+                    operationDiv.className = 'copy-item operation';
+                    operationDiv.innerHTML = `
+                        <input type="checkbox" id="operation_${operation.id}" data-type="operation" data-id="${operation.id}" data-family-id="${family.id}">
+                        <label for="operation_${operation.id}">• ${operation.name}</label>
+                    `;
+                    listContainer.appendChild(operationDiv);
+                });
+            });
+
+            sourceData.families.forEach(family => {
+                const familyCheckbox = document.getElementById(`family_${family.id}`);
+                if (familyCheckbox) {
+                    familyCheckbox.addEventListener('change', function() {
+                        const operations = sourceData.operations.filter(op => op.familyId === family.id);
+                        operations.forEach(operation => {
+                            const opCheckbox = document.getElementById(`operation_${operation.id}`);
+                            if (opCheckbox) {
+                                opCheckbox.checked = this.checked;
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
+        function selectAllElements() {
+            const checkboxes = document.querySelectorAll('#copyElementsList input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        }
+
+        function deselectAllElements() {
+            const checkboxes = document.querySelectorAll('#copyElementsList input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        function copySelectedElements() {
+            const sourceClientId = document.getElementById('sourceClientSelect').value;
+            const targetClientId = document.getElementById('targetClientSelect').value;
+
+            if (!sourceClientId || !targetClientId) {
+                alert('Veuillez sélectionner les clients source et destination');
+                return;
+            }
+
+            if (sourceClientId === targetClientId) {
+                alert('Le client source et destination ne peuvent pas être identiques');
+                return;
+            }
+
+            const sourceData = appData.clientData[sourceClientId];
+            let targetData = appData.clientData[targetClientId];
+            
+            if (!targetData) {
+                targetData = appData.clientData[targetClientId] = {
+                    families: [],
+                    operations: [],
+                    tasks: {},
+                    dates: [],
+                    todos: []
+                };
+            }
+
+            const selectedCheckboxes = document.querySelectorAll('#copyElementsList input[type="checkbox"]:checked');
+            const familiesMapping = {};
+            let copiedCount = 0;
+
+            const selectedFamilies = [];
+            const selectedOperations = [];
+
+            selectedCheckboxes.forEach(checkbox => {
+                if (checkbox.dataset.type === 'family') {
+                    selectedFamilies.push(parseInt(checkbox.dataset.id));
+                } else if (checkbox.dataset.type === 'operation') {
+                    selectedOperations.push(parseInt(checkbox.dataset.id));
+                }
+            });
+
+            selectedFamilies.forEach(familyId => {
+                const originalFamily = sourceData.families.find(f => f.id === familyId);
+                if (originalFamily) {
+                    const existingFamily = targetData.families.find(f => f.name === originalFamily.name);
+                    if (!existingFamily) {
+                        const newFamilyId = Date.now() + Math.random();
+                        const newFamily = {
+                            id: newFamilyId,
+                            name: originalFamily.name,
+                            order: targetData.families.length + 1
+                        };
+                        targetData.families.push(newFamily);
+                        familiesMapping[familyId] = newFamilyId;
+                        copiedCount++;
+                    } else {
+                        familiesMapping[familyId] = existingFamily.id;
+                    }
+                }
+            });
+
+            selectedOperations.forEach(operationId => {
+                const originalOperation = sourceData.operations.find(op => op.id === operationId);
+                if (originalOperation) {
+                    const familyId = originalOperation.familyId;
+                    let targetFamilyId = familiesMapping[familyId];
+                    
+                    if (!targetFamilyId) {
+                        const originalFamily = sourceData.families.find(f => f.id === familyId);
+                        if (originalFamily) {
+                            const existingFamily = targetData.families.find(f => f.name === originalFamily.name);
+                            if (existingFamily) {
+                                targetFamilyId = existingFamily.id;
+                            } else {
+                                const newFamilyId = Date.now() + Math.random();
+                                const newFamily = {
+                                    id: newFamilyId,
+                                    name: originalFamily.name,
+                                    order: targetData.families.length + 1
+                                };
+                                targetData.families.push(newFamily);
+                                targetFamilyId = newFamilyId;
+                                familiesMapping[familyId] = newFamilyId;
+                            }
+                        }
+                    }
+
+                    if (targetFamilyId) {
+                        const existingOperation = targetData.operations.find(op => 
+                            op.familyId === targetFamilyId && op.name === originalOperation.name
+                        );
+                        
+                        if (!existingOperation) {
+                            const newOperation = {
+                                id: Date.now() + Math.random(),
+                                familyId: targetFamilyId,
+                                name: originalOperation.name,
+                                order: targetData.operations.filter(op => op.familyId === targetFamilyId).length + 1
+                            };
+                            targetData.operations.push(newOperation);
+                            copiedCount++;
+                        }
+                    }
+                }
+            });
+
+            if (copiedCount > 0) {
+                alert(`${copiedCount} élément(s) copié(s) avec succès !`);
+                saveToFirestore();
+                
+                if (appData.currentClient === targetClientId) {
+                    updateTable();
+                }
+                
+                closeModal('copyModal');
+            } else {
+                alert('Aucun nouvel élément à copier');
+            }
+        }
+
+        // ============ GESTION TODO LIST ============
+
+        function getClientTodos() {
+            if (!appData.currentClient) return [];
+            const clientData = getClientData();
+            if (!clientData.todos) clientData.todos = [];
+            return clientData.todos;
+        }
+
+        function openTodoModal() {
+            // Synchroniser avec la sélection de client principal
+            const clientSelect = document.getElementById('clientSelect');
+            appData.currentClient = clientSelect.value || null;
+            
+            // Toujours ouvrir le modal, même sans client sélectionné
+            document.getElementById('todoModal').style.display = 'block';
+            
+            // S'assurer que les valeurs par défaut sont correctes
+            document.getElementById('todoPriority').value = 'low';
+            appData.isAddingFavorite = false;
+            document.getElementById('todoFavorite').classList.remove('active');
+            
+            updateTodoModal();
+        }
+
+        function updateTodoModal() {
+            const titleElement = document.getElementById('todoModalTitle');
+            const addForm = document.getElementById('todoAddForm');
+            
+            if (!appData.currentClient || appData.currentClient === "" || appData.currentClient === null) {
+                titleElement.textContent = '📝 Todo List - Sélectionnez un client';
+                addForm.style.display = 'none'; // Masquer le formulaire d'ajout
+                
+                // Réinitialiser les onglets pour un état vierge
+                document.getElementById('tabActive').textContent = '📋 À faire (0)';
+                document.getElementById('tabArchived').textContent = '📦 Archivées (0)';
+                
+                // Message informatif et engageant
+                document.getElementById('todoList').innerHTML = `
+                    <div style="text-align: center; padding: 60px 40px; color: #666;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">Gestion des tâches par client</h3>
+                        <p style="font-size: 16px; margin-bottom: 25px; line-height: 1.5;">
+                            Sélectionnez un client dans le menu déroulant principal<br>
+                            pour voir et gérer ses tâches.
+                        </p>
+                        <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db; margin: 20px auto; max-width: 400px;">
+                            <p style="margin: 0; font-size: 14px; color: #2c3e50;">
+                                💡 <strong>Astuce :</strong> Chaque client a sa propre liste de tâches avec priorités, échéances et favoris !
+                            </p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const client = appData.clients.find(c => c.id == appData.currentClient);
+            titleElement.textContent = `📝 Todo List - ${client ? client.name : 'Client'}`;
+            addForm.style.display = appData.currentTodoTab === 'active' ? 'flex' : 'none';
+            
+            updateTodoTabs();
+            updateTodoList();
+        }
+
+        function switchTodoTab(tab) {
+            appData.currentTodoTab = tab;
+            
+            document.querySelectorAll('.todo-tab').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tab === 'active' ? 'tabActive' : 'tabArchived').classList.add('active');
+            
+            updateTodoModal();
+        }
+
+        function updateTodoTabs() {
+            const todos = getClientTodos();
+            const activeTodos = todos.filter(t => t.status === 'active').length;
+            const archivedTodos = todos.filter(t => t.status === 'archived').length;
+            
+            document.getElementById('tabActive').textContent = `📋 À faire (${activeTodos})`;
+            document.getElementById('tabArchived').textContent = `📦 Archivées (${archivedTodos})`;
+        }
+
+        function filterTodos(filter) {
+            appData.currentTodoFilter = filter;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+            
+            updateTodoList();
+        }
+
+        function toggleAddFavorite() {
+            appData.isAddingFavorite = appData.isAddingFavorite === true ? false : true;
+            
+            const btn = document.getElementById('todoFavorite');
+            if (appData.isAddingFavorite) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+
+        function addTodo() {
+            const text = document.getElementById('todoText').value.trim();
+            const priority = document.getElementById('todoPriority').value;
+            const dueDate = document.getElementById('todoDate').value || null;
+            
+            if (!text) {
+                alert('Veuillez saisir le texte de la tâche');
+                return;
+            }
+            
+            if (!appData.currentClient) {
+                alert('Veuillez sélectionner un client avant d\'ajouter une tâche');
+                return;
+            }
+            
+            const clientData = getClientData();
+            if (!clientData.todos) clientData.todos = [];
+            
+            const isFavorite = appData.isAddingFavorite === true;
+            
+            const newTodo = {
+                id: Date.now(),
+                text: text,
+                priority: priority,
+                isFavorite: isFavorite,
+                dueDate: dueDate,
+                status: 'active',
+                archivedDate: null,
+                order: clientData.todos.filter(t => t.status === 'active').length + 1
+            };
+            
+            clientData.todos.push(newTodo);
+            
+            document.getElementById('todoText').value = '';
+            document.getElementById('todoPriority').value = 'low';
+            document.getElementById('todoDate').value = '';
+            
+            appData.isAddingFavorite = false;
+            document.getElementById('todoFavorite').classList.remove('active');
+            
+            updateTodoModal();
+            updateTodoBadge();
+            updateClientSelect();
+            saveToFirestore();
+        }
+
+        function updateTodoList() {
+            const todoList = document.getElementById('todoList');
+            const todos = getClientTodos();
+            
+            if (todos.length === 0) {
+                todoList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Aucune tâche pour ce client</p>';
+                return;
+            }
+            
+            let filteredTodos = todos.filter(todo => todo.status === appData.currentTodoTab);
+            
+            if (appData.currentTodoFilter === 'favorites') {
+                filteredTodos = filteredTodos.filter(todo => todo.isFavorite === true);
+            } else if (appData.currentTodoFilter === 'urgent') {
+                filteredTodos = filteredTodos.filter(todo => todo.priority === 'high');
+            } else if (appData.currentTodoFilter === 'today') {
+                const today = new Date().toISOString().split('T')[0];
+                filteredTodos = filteredTodos.filter(todo => todo.dueDate === today);
+            }
+            
+            filteredTodos.sort((a, b) => {
+                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+                if (priorityDiff !== 0) return priorityDiff;
+                return a.order - b.order;
+            });
+            
+            if (filteredTodos.length === 0) {
+                let message = 'Aucune tâche correspondant aux filtres';
+                if (appData.currentTodoFilter === 'favorites') {
+                    message = 'Aucune tâche favorite. Cliquez sur ⭐ pour marquer vos tâches importantes !';
+                } else if (appData.currentTodoFilter === 'urgent') {
+                    message = 'Aucune tâche urgente (priorité haute)';
+                } else if (appData.currentTodoFilter === 'today') {
+                    message = 'Aucune tâche prévue pour aujourd\'hui';
+                }
+                todoList.innerHTML = `<p style="text-align: center; color: #666; padding: 40px;">${message}</p>`;
+                return;
+            }
+            
+            todoList.innerHTML = '';
+            filteredTodos.forEach((todo, index) => {
+                const todoElement = createTodoElement(todo);
+                todoList.appendChild(todoElement);
+            });
+        }
+
+        function createTodoElement(todo) {
+            const div = document.createElement('div');
+            div.className = `todo-item ${todo.status === 'archived' ? 'todo-archived' : ''}`;
+            div.draggable = todo.status === 'active';
+            div.dataset.todoId = todo.id;
+            
+            const priorityClass = todo.priority;
+            const favoriteClass = todo.isFavorite ? 'active' : '';
+            
+            let dateDisplay = '';
+            let dateClass = '';
+            
+            if (todo.dueDate) {
+                const dueDate = new Date(todo.dueDate);
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                
+                if (todo.dueDate < todayStr) {
+                    dateClass = 'overdue';
+                    const diffTime = today - dueDate;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    dateDisplay = `En retard de ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+                } else if (todo.dueDate === todayStr) {
+                    dateClass = 'today';
+                    dateDisplay = 'À faire aujourd\'hui';
+                } else {
+                    dateClass = 'upcoming';
+                    dateDisplay = `Échéance: ${dueDate.toLocaleDateString('fr-FR')}`;
+                }
+            } else {
+                dateDisplay = 'Aucune échéance';
+                dateClass = '';
+            }
+            
+            let archivedInfo = '';
+            if (todo.status === 'archived' && todo.archivedDate) {
+                const archivedDate = new Date(todo.archivedDate);
+                archivedInfo = `<div class="archived-date">📦 Archivée le ${archivedDate.toLocaleDateString('fr-FR')}</div>`;
+            }
+            
+            div.innerHTML = `
+                <div class="todo-priority ${priorityClass}"></div>
+                <div class="todo-favorite ${favoriteClass}" onclick="toggleTodoFavorite(${todo.id})">⭐</div>
+                <div class="todo-content">
+                    <div class="todo-text">${todo.text.replace(/\n/g, '<br>')}</div>
+                    <div class="todo-date-info">
+                        <span class="date-label">📅</span>
+                        <span class="date-value ${dateClass}">${dateDisplay}</span>
+                    </div>
+                    ${archivedInfo}
+                </div>
+                <div class="todo-actions">
+                    ${todo.status === 'active' ? `<button class="btn-mini btn-edit" onclick="event.stopPropagation(); archiveTodo(${todo.id})" title="Archiver">✅</button>` : ''}
+                    ${todo.status === 'archived' ? `<button class="btn-mini btn-edit" onclick="event.stopPropagation(); unarchiveTodo(${todo.id})" title="Désarchiver">🔄</button>` : ''}
+                    <button class="btn-mini btn-edit" onclick="event.stopPropagation(); editTodo(${todo.id})" title="Modifier">✏️</button>
+                    <button class="btn-mini btn-delete" onclick="event.stopPropagation(); deleteTodo(${todo.id})" title="Supprimer">🗑️</button>
+                </div>
+            `;
+            
+            if (todo.status === 'active') {
+                div.addEventListener('dragstart', handleTodoDragStart);
+                div.addEventListener('dragover', handleTodoDragOver);
+                div.addEventListener('drop', handleTodoDrop);
+                div.addEventListener('dragend', handleTodoDragEnd);
+            }
+            
+            return div;
+        }
+
+        function toggleTodoFavorite(todoId) {
+            event.stopPropagation();
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                todo.isFavorite = !todo.isFavorite;
+                updateTodoModal();
+                updateTodoBadge();
+                updateClientSelect();
+                saveToFirestore();
+            }
+        }
+
+        function archiveTodo(todoId) {
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                todo.status = 'archived';
+                todo.archivedDate = new Date().toISOString().split('T')[0];
+                updateTodoModal();
+                updateTodoBadge();
+                updateClientSelect();
+                saveToFirestore();
+            }
+        }
+
+        function unarchiveTodo(todoId) {
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                todo.status = 'active';
+                todo.archivedDate = null;
+                updateTodoModal();
+                updateTodoBadge();
+                updateClientSelect();
+                saveToFirestore();
+            }
+        }
+
+        function editTodo(todoId) {
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === todoId);
+            if (todo) {
+                appData.currentEditingTodoId = todoId;
+                document.getElementById('editTodoText').value = todo.text;
+                document.getElementById('editTodoPriority').value = todo.priority;
+                document.getElementById('editTodoDate').value = todo.dueDate || '';
+                
+                const isFavorite = todo.isFavorite === true;
+                document.getElementById('editTodoFavoriteCheck').checked = isFavorite;
+                
+                document.getElementById('editTodoModal').style.display = 'block';
+            }
+        }
+
+        function saveEditedTodo() {
+            if (!appData.currentEditingTodoId) return;
+            
+            const todos = getClientTodos();
+            const todo = todos.find(t => t.id === appData.currentEditingTodoId);
+            if (todo) {
+                todo.text = document.getElementById('editTodoText').value.trim();
+                todo.priority = document.getElementById('editTodoPriority').value;
+                todo.dueDate = document.getElementById('editTodoDate').value || null;
+                todo.isFavorite = document.getElementById('editTodoFavoriteCheck').checked;
+                
+                updateTodoModal();
+                updateTodoBadge();
+                updateClientSelect();
+                closeModal('editTodoModal');
+                saveToFirestore();
+                appData.currentEditingTodoId = null;
+            }
+        }
+
+        function deleteTodo(todoId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+                const clientData = getClientData();
+                clientData.todos = clientData.todos.filter(t => t.id !== todoId);
+                updateTodoModal();
+                updateTodoBadge();
+                updateClientSelect();
+                saveToFirestore();
+            }
+        }
+
+        // Gestion du drag & drop pour les todos
+        let draggedTodoElement = null;
+        let draggedTodoId = null;
+
+        function handleTodoDragStart(e) {
+            draggedTodoElement = e.target;
+            draggedTodoId = parseInt(e.target.dataset.todoId);
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleTodoDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const target = e.target.closest('.todo-item');
+            if (target && target !== draggedTodoElement) {
+                document.querySelectorAll('.todo-item').forEach(el => el.classList.remove('drag-over'));
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleTodoDrop(e) {
+            e.preventDefault();
+            const target = e.target.closest('.todo-item');
+            
+            if (target && target !== draggedTodoElement && draggedTodoId) {
+                const targetTodoId = parseInt(target.dataset.todoId);
+                reorderTodos(draggedTodoId, targetTodoId);
+            }
+            
+            document.querySelectorAll('.todo-item').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        function handleTodoDragEnd(e) {
+            if (draggedTodoElement) {
+                draggedTodoElement.classList.remove('dragging');
+            }
+            document.querySelectorAll('.todo-item').forEach(el => el.classList.remove('drag-over'));
+            draggedTodoElement = null;
+            draggedTodoId = null;
+        }
+
+        function reorderTodos(draggedId, targetId) {
+            const todos = getClientTodos();
+            const draggedTodo = todos.find(t => t.id === draggedId);
+            const targetTodo = todos.find(t => t.id === targetId);
+            
+            if (draggedTodo && targetTodo && draggedTodo.status === 'active' && targetTodo.status === 'active') {
+                const draggedOrder = draggedTodo.order;
+                const targetOrder = targetTodo.order;
+                
+                if (draggedOrder < targetOrder) {
+                    todos.forEach(todo => {
+                        if (todo.status === 'active' && todo.order > draggedOrder && todo.order <= targetOrder) {
+                            todo.order--;
+                        }
+                    });
+                } else {
+                    todos.forEach(todo => {
+                        if (todo.status === 'active' && todo.order >= targetOrder && todo.order < draggedOrder) {
+                            todo.order++;
+                        }
+                    });
+                }
+                
+                draggedTodo.order = targetOrder;
+                updateTodoList();
+                saveToFirestore();
+            }
+        }
+
+        function updateTodoBadge() {
+            const alerts = calculateAllAlerts();
+            const totalAlerts = Object.values(alerts).reduce((sum, client) => sum + client.count, 0);
+            
+            const badge = document.getElementById('alertBadge');
+            if (totalAlerts > 0) {
+                badge.textContent = totalAlerts;
+                badge.style.display = 'flex';
+                
+                const hasOverdue = Object.values(alerts).some(client => client.overdue.length > 0);
+                const hasToday = Object.values(alerts).some(client => client.today.length > 0);
+                
+                badge.className = 'alert-badge';
+                if (hasOverdue) {
+                    badge.classList.add('overdue');
+                } else if (hasToday) {
+                    badge.classList.add('today');
+                } else {
+                    badge.classList.add('none');
+                }
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function calculateAllAlerts() {
+            let alerts = {};
+            const today = new Date().toISOString().split('T')[0];
+            
+            for (let clientId in appData.clientData) {
+                let clientAlerts = {
+                    overdue: [],
+                    today: [],
+                    count: 0
+                };
+                
+                const todos = appData.clientData[clientId].todos || [];
+                todos.filter(todo => todo.status === 'active' && todo.dueDate).forEach(todo => {
+                    if (todo.dueDate < today) {
+                        clientAlerts.overdue.push(todo);
+                    } else if (todo.dueDate === today) {
+                        clientAlerts.today.push(todo);
+                    }
+                });
+                
+                clientAlerts.count = clientAlerts.overdue.length + clientAlerts.today.length;
+                
+                if (clientAlerts.count > 0) {
+                    alerts[clientId] = clientAlerts;
+                }
+            }
+            
+            return alerts;
+        }
+
+        function checkAndShowAlerts() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (appData.alertsDismissedToday === today) {
+                return;
+            }
+            
+            const alerts = calculateAllAlerts();
+            if (Object.keys(alerts).length > 0) {
+                showAlertsModal(alerts);
+            }
+        }
+
+        function showAlertsModal(alerts) {
+            const alertsContent = document.getElementById('alertsContent');
+            alertsContent.innerHTML = '';
+            
+            if (Object.keys(alerts).length === 0) {
+                alertsContent.innerHTML = '<div class="no-alerts">🎉 Aucune tâche urgente ! Vous êtes à jour.</div>';
+            } else {
+                Object.entries(alerts).forEach(([clientId, clientAlerts]) => {
+                    const client = appData.clients.find(c => c.id == clientId);
+                    const clientName = client ? client.name : 'Client inconnu';
+                    
+                    const clientDiv = document.createElement('div');
+                    clientDiv.className = 'client-alerts';
+                    clientDiv.innerHTML = `
+                        <div class="client-alerts-header" onclick="selectClientAndOpenTodos(${clientId})">
+                            <span>📋 ${clientName}</span>
+                            <span class="alert-count">${clientAlerts.count} alertes</span>
+                        </div>
+                        <div class="client-alerts-content">
+                            ${clientAlerts.overdue.length > 0 ? `
+                                <div class="alert-section overdue">
+                                    <h4>🔴 EN RETARD (${clientAlerts.overdue.length})</h4>
+                                    ${clientAlerts.overdue.map(todo => {
+                                        const dueDate = new Date(todo.dueDate);
+                                        const today = new Date();
+                                        const diffTime = today - dueDate;
+                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                        return `<div class="alert-task overdue">- ${todo.text} (il y a ${diffDays} jour${diffDays > 1 ? 's' : ''})</div>`;
+                                    }).join('')}
+                                </div>
+                            ` : ''}
+                            ${clientAlerts.today.length > 0 ? `
+                                <div class="alert-section today">
+                                    <h4>🟡 AUJOURD'HUI (${clientAlerts.today.length})</h4>
+                                    ${clientAlerts.today.map(todo => `<div class="alert-task today">- ${todo.text}</div>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    
+                    alertsContent.appendChild(clientDiv);
+                });
+            }
+            
+            document.getElementById('alertsModal').style.display = 'block';
+        }
+
+        function selectClientAndOpenTodos(clientId) {
+            appData.currentClient = clientId;
+            document.getElementById('clientSelect').value = clientId;
+            updateTable();
+            updateTodoBadge();
+            closeModal('alertsModal');
+            openTodoModal();
+        }
+
+        function dismissAlertsForToday() {
+            const today = new Date().toISOString().split('T')[0];
+            appData.alertsDismissedToday = today;
+            closeModal('alertsModal');
+            saveToFirestore();
+        }
+
+        function getClientData() {
+            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [] };
+            
+            if (!appData.clientData[appData.currentClient]) {
+                appData.clientData[appData.currentClient] = {
+                    families: [],
+                    operations: [],
+                    tasks: {},
+                    dates: [],
+                    todos: []
+                };
+            }
+            
+            return appData.clientData[appData.currentClient];
+        }
+
+        function updateTable() {
+            const table = document.getElementById('checklistTable');
+            const colgroup = table.querySelector('colgroup');
+            const thead = table.querySelector('thead tr');
+            const tbody = document.getElementById('checklistBody');
+
+            if (!appData.currentClient) {
+                colgroup.innerHTML = '<col style="width: 180px;">';
+                thead.innerHTML = '<th class="operations-column">Opérations à effectuer</th>';
+                tbody.innerHTML = '';
+                return;
+            }
+
+            const clientData = getClientData();
+
+            colgroup.innerHTML = '<col style="width: 180px;">';
+            clientData.dates.forEach(() => {
+                const col = document.createElement('col');
+                col.style.width = '22px';
+                colgroup.appendChild(col);
+            });
+
+            thead.innerHTML = '<th class="operations-column">Opérations à effectuer</th>';
+            clientData.dates.forEach(date => {
+                const th = document.createElement('th');
+                th.className = 'date-column';
+                const dateObj = new Date(date);
+                
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'date-text';
+                dateSpan.textContent = dateObj.toLocaleDateString('fr-FR');
+                th.appendChild(dateSpan);
+                
+                const month = dateObj.getMonth();
+                if (month % 2 === 0) {
+                    th.classList.add('month-separator');
+                }
+                
+                thead.appendChild(th);
+            });
+
+            tbody.innerHTML = '';
+            
+            clientData.families.sort((a, b) => a.order - b.order).forEach(family => {
+                const familyRow = document.createElement('tr');
+                familyRow.className = 'family-row';
+                
+                const familyCell = document.createElement('td');
+                familyCell.className = 'operations-column';
+                familyCell.textContent = '⋮⋮ ' + family.name;
+                familyCell.draggable = true;
+                familyCell.dataset.familyId = family.id;
+                familyCell.dataset.type = 'family';
+                
+                const editDeleteDiv = document.createElement('div');
+                editDeleteDiv.className = 'edit-delete-buttons';
+                editDeleteDiv.innerHTML = `
+                    <button class="btn-mini btn-edit" onclick="event.stopPropagation(); editFamily(${family.id})" title="Modifier">✏️</button>
+                    <button class="btn-mini btn-delete" onclick="event.stopPropagation(); deleteFamily(${family.id})" title="Supprimer">🗑️</button>
+                `;
+                familyCell.appendChild(editDeleteDiv);
+                
+                familyCell.addEventListener('dragstart', handleDragStart);
+                familyCell.addEventListener('dragover', handleDragOver);
+                familyCell.addEventListener('drop', handleDrop);
+                familyCell.addEventListener('dragend', handleDragEnd);
+                familyCell.addEventListener('dragenter', function(e) { e.preventDefault(); });
+                
+                familyRow.appendChild(familyCell);
+                
+                clientData.dates.forEach(() => {
+                    const td = document.createElement('td');
+                    td.className = 'date-column';
+                    familyRow.appendChild(td);
+                });
+                
+                tbody.appendChild(familyRow);
+                
+                const operations = clientData.operations
+                    .filter(op => op.familyId === family.id)
+                    .sort((a, b) => a.order - b.order);
+                
+                operations.forEach(operation => {
+                    const operationRow = document.createElement('tr');
+                    operationRow.className = 'operation-row';
+                    
+                    const operationCell = document.createElement('td');
+                    operationCell.className = 'operations-column';
+                    operationCell.textContent = '⋮⋮ ' + operation.name;
+                    operationCell.draggable = true;
+                    operationCell.dataset.operationId = operation.id;
+                    operationCell.dataset.familyId = operation.familyId;
+                    operationCell.dataset.type = 'operation';
+                    
+                    const editDeleteDiv = document.createElement('div');
+                    editDeleteDiv.className = 'edit-delete-buttons';
+                    editDeleteDiv.innerHTML = `
+                        <button class="btn-mini btn-edit" onclick="event.stopPropagation(); editOperation(${operation.id})" title="Modifier">✏️</button>
+                        <button class="btn-mini btn-delete" onclick="event.stopPropagation(); deleteOperation(${operation.id})" title="Supprimer">🗑️</button>
+                    `;
+                    operationCell.appendChild(editDeleteDiv);
+                    
+                    operationCell.addEventListener('dragstart', handleDragStart);
+                    operationCell.addEventListener('dragover', handleDragOver);
+                    operationCell.addEventListener('drop', handleDrop);
+                    operationCell.addEventListener('dragend', handleDragEnd);
+                    operationCell.addEventListener('dragenter', function(e) { e.preventDefault(); });
+                    
+                    operationRow.appendChild(operationCell);
+                    
+                    clientData.dates.forEach(date => {
+                        const td = document.createElement('td');
+                        td.className = 'status-cell';
+                        
+                        const statusBtn = document.createElement('div');
+                        statusBtn.className = 'status-btn tooltip';
+                        
+                        const taskKey = `${operation.id}_${date}`;
+                        const task = clientData.tasks[taskKey] || { status: 'pending', comment: '' };
+                        
+                        statusBtn.classList.add(task.status);
+                        
+                        if (task.comment && task.comment.trim() !== '') {
+                            statusBtn.classList.add('has-comment');
+                        }
+                        
+                        let clickTimeout = null;
+                        
+                        statusBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            clearTimeout(clickTimeout);
+                            clickTimeout = setTimeout(() => {
+                                toggleStatus(taskKey, operation.id, date);
+                            }, 200);
+                        };
+                        
+                        statusBtn.ondblclick = (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            clearTimeout(clickTimeout);
+                            openCommentModal(taskKey);
+                        };
+                        
+                        statusBtn.oncontextmenu = (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openCommentModal(taskKey);
+                        };
+                        
+                        if (task.comment) {
+                            const tooltip = document.createElement('span');
+                            tooltip.className = 'tooltiptext';
+                            tooltip.textContent = task.comment;
+                            statusBtn.appendChild(tooltip);
+                        }
+                        
+                        td.appendChild(statusBtn);
+                        operationRow.appendChild(td);
+                    });
+                    
+                    tbody.appendChild(operationRow);
+                });
+            });
+        }
+
+        function toggleStatus(taskKey, operationId, date) {
+            const clientData = getClientData();
+            if (!clientData.tasks[taskKey]) {
+                clientData.tasks[taskKey] = { status: 'pending', comment: '' };
+            }
+            
+            const currentStatus = clientData.tasks[taskKey].status;
+            let newStatus;
+            
+            switch (currentStatus) {
+                case 'pending':
+                    newStatus = 'in-progress';
+                    break;
+                case 'in-progress':
+                    newStatus = 'completed';
+                    break;
+                case 'completed':
+                    newStatus = 'pending';
+                    break;
+                default:
+                    newStatus = 'in-progress';
+            }
+            
+            clientData.tasks[taskKey].status = newStatus;
+            updateTable();
+            saveToFirestore();
+        }
+
+        function openCommentModal(taskKey) {
+            appData.currentCommentTarget = taskKey;
+            const clientData = getClientData();
+            const task = clientData.tasks[taskKey] || { status: 'pending', comment: '' };
+            document.getElementById('commentText').value = task.comment;
+            document.getElementById('commentModal').style.display = 'block';
+        }
+
+        function saveComment() {
+            const comment = document.getElementById('commentText').value.trim();
+            if (appData.currentCommentTarget) {
+                const clientData = getClientData();
+                if (!clientData.tasks[appData.currentCommentTarget]) {
+                    clientData.tasks[appData.currentCommentTarget] = { status: 'pending', comment: '' };
+                }
+                clientData.tasks[appData.currentCommentTarget].comment = comment;
+                updateTable();
+                closeModal('commentModal');
+                saveToFirestore();
+            }
+        }
+
+        function deleteComment() {
+            if (appData.currentCommentTarget) {
+                const clientData = getClientData();
+                if (clientData.tasks[appData.currentCommentTarget]) {
+                    clientData.tasks[appData.currentCommentTarget].comment = '';
+                    document.getElementById('commentText').value = '';
+                    updateTable();
+                    closeModal('commentModal');
+                    saveToFirestore();
+                }
+            }
+        }
+
+        // Gestion du drag & drop
+        let draggedElement = null;
+        let draggedData = null;
+
+        function handleDragStart(e) {
+            draggedElement = e.target.closest('tr');
+            const cell = e.target;
+            
+            draggedData = {
+                type: cell.dataset.type,
+                id: cell.dataset.type === 'family' ? parseInt(cell.dataset.familyId) : parseInt(cell.dataset.operationId),
+                familyId: cell.dataset.familyId ? parseInt(cell.dataset.familyId) : null
+            };
+            
+            draggedElement.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const target = e.target.closest('tr');
+            if (target && target !== draggedElement) {
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const target = e.target.closest('tr');
+            
+            if (target && target !== draggedElement && draggedData) {
+                const targetCell = target.querySelector('td[data-type]');
+                if (targetCell) {
+                    const targetType = targetCell.dataset.type;
+                    const targetId = targetType === 'family' ? parseInt(targetCell.dataset.familyId) : parseInt(targetCell.dataset.operationId);
+                    const targetFamilyId = targetCell.dataset.familyId ? parseInt(targetCell.dataset.familyId) : null;
+                    
+                    if (draggedData.type === 'family' && targetType === 'family') {
+                        reorderFamilies(draggedData.id, targetId);
+                    } else if (draggedData.type === 'operation' && targetType === 'operation') {
+                        if (draggedData.familyId === targetFamilyId) {
+                            reorderOperations(draggedData.id, targetId, draggedData.familyId);
+                        }
+                    }
+                }
+            }
+            
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        function handleDragEnd(e) {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+            }
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            draggedElement = null;
+            draggedData = null;
+        }
+
+        function reorderFamilies(draggedId, targetId) {
+            const clientData = getClientData();
+            const draggedFamily = clientData.families.find(f => f.id === draggedId);
+            const targetFamily = clientData.families.find(f => f.id === targetId);
+            
+            if (draggedFamily && targetFamily) {
+                const draggedOrder = draggedFamily.order;
+                const targetOrder = targetFamily.order;
+                
+                if (draggedOrder < targetOrder) {
+                    clientData.families.forEach(family => {
+                        if (family.order > draggedOrder && family.order <= targetOrder) {
+                            family.order--;
+                        }
+                    });
+                } else {
+                    clientData.families.forEach(family => {
+                        if (family.order >= targetOrder && family.order < draggedOrder) {
+                            family.order++;
+                        }
+                    });
+                }
+                
+                draggedFamily.order = targetOrder;
+                updateTable();
+                saveToFirestore();
+            }
+        }
+
+        function reorderOperations(draggedId, targetId, familyId) {
+            const clientData = getClientData();
+            const draggedOperation = clientData.operations.find(op => op.id === draggedId);
+            const targetOperation = clientData.operations.find(op => op.id === targetId);
+            
+            if (draggedOperation && targetOperation) {
+                const draggedOrder = draggedOperation.order;
+                const targetOrder = targetOperation.order;
+                
+                if (draggedOrder < targetOrder) {
+                    clientData.operations.forEach(operation => {
+                        if (operation.familyId === familyId && operation.order > draggedOrder && operation.order <= targetOrder) {
+                            operation.order--;
+                        }
+                    });
+                } else {
+                    clientData.operations.forEach(operation => {
+                        if (operation.familyId === familyId && operation.order >= targetOrder && operation.order < draggedOrder) {
+                            operation.order++;
+                        }
+                    });
+                }
+                
+                draggedOperation.order = targetOrder;
+                updateTable();
+                saveToFirestore();
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        document.getElementById('clientSelect').addEventListener('change', function() {
+            appData.currentClient = this.value;
+            updateTable();
+            updateTodoBadge();
+            updateTodoModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const openModals = document.querySelectorAll('.modal[style*="display: block"]');
+                openModals.forEach(modal => {
+                    modal.style.display = 'none';
+                });
+            }
+            
+            if (e.key === 'Enter' && e.target.id === 'todoText') {
+                addTodo();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
+
+            if (isAuthenticated()) {
+                showApp();
+                setTimeout(() => {
+                    loadFromFirestore();
+                }, 100);
+            } else {
+                hideApp();
+            }
+        });
+
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        setInterval(() => {
+            if (isAuthenticated()) {
+                updateTodoBadge();
+                updateClientSelect();
+            }
+        }, 300000);
     </script>
 </body>
 </html>
