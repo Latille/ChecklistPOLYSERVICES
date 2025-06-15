@@ -811,7 +811,6 @@
         }
 
         .todo-favorite {
-            font-size: 20px;
             margin-right: 12px;
             cursor: pointer;
             flex-shrink: 0;
@@ -830,17 +829,25 @@
             transform: scale(1.1);
         }
 
-        .todo-favorite.square {
-            background: white;
-            border: 2px solid #ffd700;
-            border-radius: 3px;
-            font-size: 0; /* Masquer le contenu texte pour le carré */
+        .todo-favorite img {
+            width: 20px;
+            height: 20px;
+            transition: all 0.3s ease;
         }
 
-        .todo-favorite.star {
-            background: none;
-            border: none;
+        .todo-favorite .fallback-emoji {
             font-size: 20px;
+            display: none;
+        }
+
+        .favorite-btn img {
+            width: 16px;
+            height: 16px;
+        }
+
+        .favorite-btn .fallback-emoji {
+            font-size: 16px;
+            display: none;
         }
 
         .todo-content {
@@ -1341,7 +1348,10 @@
                     <option value="high">🔴 Haute</option>
                 </select>
                 <input type="date" id="todoDate" />
-                <button type="button" class="favorite-btn" id="todoFavorite" onclick="toggleAddFavorite()">⭐</button>
+                <button type="button" class="favorite-btn" id="todoFavorite" onclick="toggleAddFavorite()">
+                    <img src="pas_favoris.png" alt="Pas favori" id="todoFavoriteIcon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <span class="fallback-emoji" id="todoFavoriteEmoji">☆</span>
+                </button>
                 <button class="btn btn-success" onclick="addTodo()">Ajouter</button>
             </div>
 
@@ -1380,7 +1390,8 @@
             <div class="form-group" style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-top: 10px;">
                 <label for="editTodoFavoriteCheck" style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
                     <input type="checkbox" id="editTodoFavoriteCheck" style="margin-right: 10px; transform: scale(1.2);"> 
-                    <span style="font-size: 18px; margin-right: 8px;">⭐</span>
+                    <img src="favoris.png" alt="Favori" style="width: 18px; height: 18px; margin-right: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <span style="font-size: 18px; margin-right: 8px; display: none;">⭐</span>
                     Marquer comme favori
                 </label>
                 <small style="color: #666; font-style: italic; margin-left: 38px; display: block; margin-top: 4px;">
@@ -2284,6 +2295,12 @@
             document.getElementById('todoPriority').value = 'low';
             appData.isAddingFavorite = false;
             document.getElementById('todoFavorite').classList.remove('active');
+            document.getElementById('todoFavoriteIcon').src = 'pas_favoris.png';
+            document.getElementById('todoFavoriteIcon').alt = 'Pas favori';
+            document.getElementById('todoFavoriteEmoji').textContent = '☆';
+            document.getElementById('todoFavoriteEmoji').textContent = '☆';
+            document.getElementById('todoFavoriteIcon').src = 'pas_favoris.png';
+            document.getElementById('todoFavoriteIcon').alt = 'Pas favori';
             
             updateTodoModal();
         }
@@ -2316,6 +2333,19 @@
                         </div>
                     </div>
                 `;
+                
+                // Réinitialiser l'icône du bouton favori
+                const favoriteIcon = document.getElementById('todoFavoriteIcon');
+                const favoriteEmoji = document.getElementById('todoFavoriteEmoji');
+                if (favoriteIcon) {
+                    favoriteIcon.src = 'pas_favoris.png';
+                    favoriteIcon.alt = 'Pas favori';
+                    favoriteIcon.style.display = 'inline';
+                }
+                if (favoriteEmoji) {
+                    favoriteEmoji.textContent = '☆';
+                    favoriteEmoji.style.display = 'none';
+                }
                 return;
             }
 
@@ -2357,10 +2387,19 @@
         function toggleAddFavorite() {
             appData.isAddingFavorite = appData.isAddingFavorite === true ? false : true;
             
+            const icon = document.getElementById('todoFavoriteIcon');
+            const emoji = document.getElementById('todoFavoriteEmoji');
             const btn = document.getElementById('todoFavorite');
+            
             if (appData.isAddingFavorite) {
+                icon.src = 'favoris.png';
+                icon.alt = 'Favori';
+                emoji.textContent = '⭐';
                 btn.classList.add('active');
             } else {
+                icon.src = 'pas_favoris.png';
+                icon.alt = 'Pas favori';
+                emoji.textContent = '☆';
                 btn.classList.remove('active');
             }
         }
@@ -2465,7 +2504,9 @@
             div.dataset.todoId = todo.id;
             
             const priorityClass = todo.priority;
-            const favoriteClass = todo.isFavorite ? 'active' : '';
+            const favoriteIcon = todo.isFavorite ? 'favoris.png' : 'pas_favoris.png';
+            const favoriteAlt = todo.isFavorite ? 'Favori' : 'Pas favori';
+            const favoriteEmoji = todo.isFavorite ? '⭐' : '☆';
             
             let dateDisplay = '';
             let dateClass = '';
@@ -2500,7 +2541,10 @@
             
             div.innerHTML = `
                 <div class="todo-priority ${priorityClass}"></div>
-                <div class="todo-favorite ${favoriteClass}" onclick="toggleTodoFavorite(${todo.id})">⭐</div>
+                <div class="todo-favorite" onclick="toggleTodoFavorite(${todo.id})">
+                    <img src="${favoriteIcon}" alt="${favoriteAlt}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <span class="fallback-emoji" style="display:none;">${favoriteEmoji}</span>
+                </div>
                 <div class="todo-content">
                     <div class="todo-text">${todo.text.replace(/\n/g, '<br>')}</div>
                     <div class="todo-date-info">
