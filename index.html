@@ -1417,6 +1417,41 @@
                 <label for="commentText">Commentaire :</label>
                 <textarea id="commentText" placeholder="Votre commentaire..."></textarea>
             </div>
+            <div class="form-group" style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <label style="display: flex; align-items: center; margin-bottom: 10px; font-size: 16px;">
+                    📅 Période concernée par cette opération :
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label for="concernedMonth" style="font-size: 14px; margin-bottom: 5px;">Mois :</label>
+                        <select id="concernedMonth">
+                            <option value="">-- Sélectionner --</option>
+                            <option value="01">Janvier</option>
+                            <option value="02">Février</option>
+                            <option value="03">Mars</option>
+                            <option value="04">Avril</option>
+                            <option value="05">Mai</option>
+                            <option value="06">Juin</option>
+                            <option value="07">Juillet</option>
+                            <option value="08">Août</option>
+                            <option value="09">Septembre</option>
+                            <option value="10">Octobre</option>
+                            <option value="11">Novembre</option>
+                            <option value="12">Décembre</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="concernedYear" style="font-size: 14px; margin-bottom: 5px;">Année :</label>
+                        <select id="concernedYear">
+                            <option value="">-- Sélectionner --</option>
+                        </select>
+                    </div>
+                </div>
+                <small style="color: #666; font-style: italic; margin-top: 8px; display: block;">
+                    ⚠️ <strong>Laissez vide</strong> si l'opération concerne la même période que la colonne.<br>
+                    💡 <strong>Exemple :</strong> Tâche exécutée le 15/06/2025 mais concernant Mai 2025 → Sélectionnez "Mai" et "2025".
+                </small>
+            </div>
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-success" onclick="saveComment()">Sauvegarder</button>
                 <button class="btn" style="background: #e74c3c;" onclick="deleteComment()">Supprimer</button>
@@ -1708,9 +1743,9 @@
                 ],
                 dates: ['2025-06-15', '2025-06-20', '2025-07-01', '2025-07-15'],
                 tasks: {
-                    '1_2025-06-15': { status: 'completed', comment: 'Vérification OK' },
-                    '2_2025-06-15': { status: 'in-progress', comment: 'En cours' },
-                    '3_2025-06-20': { status: 'pending', comment: '' }
+                    '1_2025-06-15': { status: 'completed', comment: 'Vérification OK', concernedMonth: '', concernedYear: '' },
+                    '2_2025-06-15': { status: 'in-progress', comment: 'En cours', concernedMonth: '05', concernedYear: '2025' },
+                    '3_2025-06-20': { status: 'pending', comment: '', concernedMonth: '', concernedYear: '' }
                 },
                 todos: [
                     { id: 1, text: 'Appeler client urgent', priority: 'high', isFavorite: false, dueDate: '2025-06-10', status: 'active', archivedDate: null, order: 1 },
@@ -3426,12 +3461,30 @@
                         statusBtn.className = 'status-btn tooltip';
                         
                         const taskKey = `${operation.id}_${date}`;
-                        const task = clientData.tasks[taskKey] || { status: 'pending', comment: '' };
+                        const task = clientData.tasks[taskKey] || { status: 'pending', comment: '', concernedMonth: '', concernedYear: '' };
                         
                         statusBtn.classList.add(task.status);
                         
+                        // Vérifier s'il y a une période concernée différente
+                        const dateObj = new Date(date);
+                        const columnMonth = String(dateObj.getMonth() + 1).padStart(2, '0');
+                        const columnYear = String(dateObj.getFullYear());
+                        
+                        // On considère qu'il y a une période différente seulement si au moins un des champs est rempli ET différent
+                        const hasDifferentPeriod = (task.concernedMonth && task.concernedMonth !== columnMonth) || 
+                                                 (task.concernedYear && task.concernedYear !== columnYear);
+                        
                         if (task.comment && task.comment.trim() !== '') {
                             statusBtn.classList.add('has-comment');
+                        }
+                        
+                        // Ajouter l'icône 📅 si période différente
+                        if (hasDifferentPeriod) {
+                            statusBtn.innerHTML = '📅';
+                            statusBtn.style.fontSize = '12px';
+                            statusBtn.style.display = 'flex';
+                            statusBtn.style.alignItems = 'center';
+                            statusBtn.style.justifyContent = 'center';
                         }
                         
                         let clickTimeout = null;
@@ -3457,10 +3510,30 @@
                             openCommentModal(taskKey);
                         };
                         
-                        if (task.comment) {
+                        // Créer le tooltip avec les informations complètes
+                        if (task.comment || hasDifferentPeriod) {
                             const tooltip = document.createElement('span');
                             tooltip.className = 'tooltiptext';
-                            tooltip.textContent = task.comment;
+                            
+                            let tooltipContent = '';
+                            
+                            if (hasDifferentPeriod) {
+                                const monthNames = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                                  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                                const monthName = task.concernedMonth ? monthNames[parseInt(task.concernedMonth)] : '';
+                                const yearName = task.concernedYear || '';
+                                
+                                const executionDate = new Date(date).toLocaleDateString('fr-FR');
+                                tooltipContent += `📅 Exécuté le ${executionDate}\n🎯 Concerne: ${monthName} ${yearName}`;
+                                
+                                if (task.comment) {
+                                    tooltipContent += `\n💬 ${task.comment}`;
+                                }
+                            } else if (task.comment) {
+                                tooltipContent = task.comment;
+                            }
+                            
+                            tooltip.textContent = tooltipContent;
                             statusBtn.appendChild(tooltip);
                         }
                         
@@ -3476,7 +3549,7 @@
         function toggleStatus(taskKey, operationId, date) {
             const clientData = getClientData();
             if (!clientData.tasks[taskKey]) {
-                clientData.tasks[taskKey] = { status: 'pending', comment: '' };
+                clientData.tasks[taskKey] = { status: 'pending', comment: '', concernedMonth: '', concernedYear: '' };
             }
             
             const currentStatus = clientData.tasks[taskKey].status;
@@ -3504,19 +3577,45 @@
         function openCommentModal(taskKey) {
             appData.currentCommentTarget = taskKey;
             const clientData = getClientData();
-            const task = clientData.tasks[taskKey] || { status: 'pending', comment: '' };
+            const task = clientData.tasks[taskKey] || { status: 'pending', comment: '', concernedMonth: '', concernedYear: '' };
+            
+            // Charger le commentaire existant
             document.getElementById('commentText').value = task.comment;
+            
+            // Initialiser les années (5 ans avant et après l'année actuelle)
+            const currentYear = new Date().getFullYear();
+            const yearSelect = document.getElementById('concernedYear');
+            yearSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+            
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+            
+            // Charger les données de période concernée existantes
+            document.getElementById('concernedMonth').value = task.concernedMonth || '';
+            document.getElementById('concernedYear').value = task.concernedYear || '';
+            
             document.getElementById('commentModal').style.display = 'block';
         }
 
         function saveComment() {
             const comment = document.getElementById('commentText').value.trim();
+            const concernedMonth = document.getElementById('concernedMonth').value;
+            const concernedYear = document.getElementById('concernedYear').value;
+            
             if (appData.currentCommentTarget) {
                 const clientData = getClientData();
                 if (!clientData.tasks[appData.currentCommentTarget]) {
-                    clientData.tasks[appData.currentCommentTarget] = { status: 'pending', comment: '' };
+                    clientData.tasks[appData.currentCommentTarget] = { status: 'pending', comment: '', concernedMonth: '', concernedYear: '' };
                 }
+                
                 clientData.tasks[appData.currentCommentTarget].comment = comment;
+                clientData.tasks[appData.currentCommentTarget].concernedMonth = concernedMonth;
+                clientData.tasks[appData.currentCommentTarget].concernedYear = concernedYear;
+                
                 updateTable();
                 closeModal('commentModal');
                 saveToFirestore();
@@ -3528,7 +3627,13 @@
                 const clientData = getClientData();
                 if (clientData.tasks[appData.currentCommentTarget]) {
                     clientData.tasks[appData.currentCommentTarget].comment = '';
+                    clientData.tasks[appData.currentCommentTarget].concernedMonth = '';
+                    clientData.tasks[appData.currentCommentTarget].concernedYear = '';
+                    
                     document.getElementById('commentText').value = '';
+                    document.getElementById('concernedMonth').value = '';
+                    document.getElementById('concernedYear').value = '';
+                    
                     updateTable();
                     closeModal('commentModal');
                     saveToFirestore();
