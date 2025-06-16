@@ -514,6 +514,11 @@
             z-index: 1100;
         }
 
+        /* Modals d'opérations au bon niveau */
+        #operationModal, #editOperationModal {
+            z-index: 1050;
+        }
+
         .modal-content {
             background-color: white;
             margin: 15% auto;
@@ -1003,6 +1008,15 @@
             background: #fffbf0;
         }
 
+        .alert-section.upcoming h4 {
+            color: #3498db;
+        }
+
+        .alert-task.upcoming {
+            border-left-color: #3498db;
+            background: #f0f8ff;
+        }
+
         .alerts-actions {
             display: flex;
             gap: 15px;
@@ -1224,7 +1238,7 @@
     </div>
 
     <div id="operationModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
                 <h3>Ajouter une opération</h3>
                 <span class="close" onclick="closeModal('operationModal')">&times;</span>
@@ -1239,6 +1253,50 @@
                 <label for="operationName">Nom de l'opération :</label>
                 <input type="text" id="operationName" placeholder="Nom de l'opération">
             </div>
+            
+            <!-- Configuration des alertes -->
+            <div class="form-group" style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px; margin-bottom: 10px;">
+                    <input type="checkbox" id="enableAlerts" onchange="toggleAlertConfig()" style="margin-right: 10px; transform: scale(1.2);">
+                    🚨 Activer les alertes pour cette opération
+                </label>
+                
+                <div id="alertConfig" style="display: none; margin-top: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label for="alertType">Fréquence :</label>
+                            <select id="alertType">
+                                <option value="monthly">📅 Mensuelle</option>
+                                <option value="quarterly">📅 Trimestrielle</option>
+                                <option value="yearly">📅 Annuelle</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="alertDeadline">Échéance (jour du mois) :</label>
+                            <input type="number" id="alertDeadline" min="1" max="31" value="20" placeholder="20">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="alertDays">Alertes préventives (jours avant échéance) :</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label><input type="checkbox" value="7"> 7 jours</label>
+                            <label><input type="checkbox" value="3"> 3 jours</label>
+                            <label><input type="checkbox" value="1"> 1 jour</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="alertSeverity">Niveau d'importance :</label>
+                        <select id="alertSeverity">
+                            <option value="low">🟢 Faible</option>
+                            <option value="medium">🟡 Moyenne</option>
+                            <option value="high">🔴 Élevée</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
             <button class="btn btn-success" onclick="addOperation()">Ajouter opération</button>
         </div>
     </div>
@@ -1258,7 +1316,7 @@
     </div>
 
     <div id="editOperationModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
                 <h3>Modifier une opération</h3>
                 <span class="close" onclick="closeModal('editOperationModal')">&times;</span>
@@ -1267,6 +1325,50 @@
                 <label for="editOperationName">Nom de l'opération :</label>
                 <input type="text" id="editOperationName" placeholder="Nom de l'opération">
             </div>
+            
+            <!-- Configuration des alertes pour édition -->
+            <div class="form-group" style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px; margin-bottom: 10px;">
+                    <input type="checkbox" id="editEnableAlerts" style="margin-right: 10px; transform: scale(1.2);">
+                    🚨 Activer les alertes pour cette opération
+                </label>
+                
+                <div id="editAlertConfig" style="display: none; margin-top: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label for="editAlertType">Fréquence :</label>
+                            <select id="editAlertType">
+                                <option value="monthly">📅 Mensuelle</option>
+                                <option value="quarterly">📅 Trimestrielle</option>
+                                <option value="yearly">📅 Annuelle</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editAlertDeadline">Échéance (jour du mois) :</label>
+                            <input type="number" id="editAlertDeadline" min="1" max="31" value="20" placeholder="20">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editAlertDays">Alertes préventives (jours avant échéance) :</label>
+                        <div style="display: flex; gap: 10px; align-items: center;" id="editAlertDaysContainer">
+                            <label><input type="checkbox" value="7"> 7 jours</label>
+                            <label><input type="checkbox" value="3"> 3 jours</label>
+                            <label><input type="checkbox" value="1"> 1 jour</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editAlertSeverity">Niveau d'importance :</label>
+                        <select id="editAlertSeverity">
+                            <option value="low">🟢 Faible</option>
+                            <option value="medium">🟡 Moyenne</option>
+                            <option value="high">🔴 Élevée</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
             <button class="btn btn-success" onclick="saveEditedOperation()">Sauvegarder</button>
         </div>
     </div>
@@ -1434,6 +1536,23 @@
             sessionDuration: 24 * 60 * 60 * 1000
         };
 
+        // Fonction globale pour gérer l'affichage des alertes dans le modal d'ajout
+        function toggleAlertConfig() {
+            const enableAlerts = document.getElementById('enableAlerts').checked;
+            const alertConfig = document.getElementById('alertConfig');
+            const modal = document.querySelector('#operationModal .modal-content');
+            
+            alertConfig.style.display = enableAlerts ? 'block' : 'none';
+            
+            // Recentrer le modal après changement de taille
+            setTimeout(() => {
+                const modalHeight = modal.offsetHeight;
+                const viewportHeight = window.innerHeight;
+                const newMarginTop = Math.max(5, (viewportHeight - modalHeight) / 2 / viewportHeight * 100);
+                modal.style.marginTop = newMarginTop + '%';
+            }, 50);
+        }
+
         // Données de l'application
         let appData = {
             clients: [],
@@ -1558,10 +1677,34 @@
                     { id: 2, name: 'Ctrl qualité', order: 2 }
                 ],
                 operations: [
-                    { id: 1, familyId: 1, name: 'Vérif équipements', order: 1 },
-                    { id: 2, familyId: 1, name: 'Lubrif machines', order: 2 },
-                    { id: 3, familyId: 2, name: 'Test conform', order: 1 },
-                    { id: 4, familyId: 2, name: 'Valid docs', order: 2 }
+                    { 
+                        id: 1, 
+                        familyId: 1, 
+                        name: 'Vérif équipements', 
+                        order: 1,
+                        alertConfig: null
+                    },
+                    { 
+                        id: 2, 
+                        familyId: 1, 
+                        name: 'Lubrif machines', 
+                        order: 2,
+                        alertConfig: null
+                    },
+                    { 
+                        id: 3, 
+                        familyId: 2, 
+                        name: 'Test conform', 
+                        order: 1,
+                        alertConfig: null
+                    },
+                    { 
+                        id: 4, 
+                        familyId: 2, 
+                        name: 'Valid docs', 
+                        order: 2,
+                        alertConfig: null
+                    }
                 ],
                 dates: ['2025-06-15', '2025-06-20', '2025-07-01', '2025-07-15'],
                 tasks: {
@@ -1582,10 +1725,40 @@
                     { id: 6, name: 'Nettoyage', order: 2 }
                 ],
                 operations: [
-                    { id: 11, familyId: 5, name: 'Ctrl accès', order: 1 },
-                    { id: 12, familyId: 5, name: 'Rondes sécur', order: 2 },
-                    { id: 13, familyId: 6, name: 'Aspirateur', order: 1 },
-                    { id: 14, familyId: 6, name: 'Désinfection', order: 2 }
+                    { 
+                        id: 11, 
+                        familyId: 5, 
+                        name: 'Ctrl accès', 
+                        order: 1,
+                        alertConfig: null
+                    },
+                    { 
+                        id: 12, 
+                        familyId: 5, 
+                        name: 'Rondes sécur', 
+                        order: 2,
+                        alertConfig: null
+                    },
+                    { 
+                        id: 13, 
+                        familyId: 6, 
+                        name: 'Aspirateur', 
+                        order: 1,
+                        alertConfig: null
+                    },
+                    { 
+                        id: 14, 
+                        familyId: 6, 
+                        name: 'Désinfection', 
+                        order: 2,
+                        alertConfig: {
+                            enabled: true,
+                            type: 'monthly',
+                            deadline: 25,
+                            alertDays: [7, 3, 1],
+                            severity: 'high'
+                        }
+                    }
                 ],
                 dates: ['2025-05-10', '2025-05-25', '2025-06-10'],
                 tasks: {},
@@ -1953,6 +2126,21 @@
         // Gestion des opérations
         function openOperationModal() {
             updateFamilySelect();
+            
+            // Réinitialiser le formulaire
+            document.getElementById('operationName').value = '';
+            document.getElementById('enableAlerts').checked = false;
+            document.getElementById('alertConfig').style.display = 'none';
+            document.getElementById('alertType').value = 'monthly';
+            document.getElementById('alertDeadline').value = 20;
+            document.getElementById('alertSeverity').value = 'medium';
+            
+            // Décocher toutes les cases d'alertes
+            const alertDaysCheckboxes = document.querySelectorAll('#alertConfig input[type="checkbox"]');
+            alertDaysCheckboxes.forEach(cb => {
+                cb.checked = false;
+            });
+            
             document.getElementById('operationModal').style.display = 'block';
         }
 
@@ -1966,11 +2154,34 @@
                     id: Date.now(),
                     familyId: familyId,
                     name: name,
-                    order: clientData.operations.filter(op => op.familyId === familyId).length + 1
+                    order: clientData.operations.filter(op => op.familyId === familyId).length + 1,
+                    alertConfig: null
                 };
+                
+                // Sauvegarder la configuration des alertes si activée
+                const alertsEnabled = document.getElementById('enableAlerts').checked;
+                
+                if (alertsEnabled) {
+                    const alertDaysCheckboxes = document.querySelectorAll('#alertConfig input[type="checkbox"]:checked');
+                    const alertDays = Array.from(alertDaysCheckboxes).map(cb => parseInt(cb.value));
+                    
+                    newOperation.alertConfig = {
+                        enabled: true,
+                        type: document.getElementById('alertType').value,
+                        deadline: parseInt(document.getElementById('alertDeadline').value),
+                        alertDays: alertDays,
+                        severity: document.getElementById('alertSeverity').value
+                    };
+                }
+                
                 clientData.operations.push(newOperation);
+                
+                // Réinitialiser le formulaire
                 document.getElementById('operationName').value = '';
                 document.getElementById('familySelect').value = '';
+                document.getElementById('enableAlerts').checked = false;
+                document.getElementById('alertConfig').style.display = 'none';
+                
                 updateTable();
                 closeModal('operationModal');
                 saveToFirestore();
@@ -2030,8 +2241,57 @@
             if (operation) {
                 currentEditingOperationId = operationId;
                 document.getElementById('editOperationName').value = operation.name;
+                
+                // Charger la configuration des alertes
+                const hasAlerts = operation.alertConfig && operation.alertConfig.enabled;
+                document.getElementById('editEnableAlerts').checked = hasAlerts;
+                document.getElementById('editAlertConfig').style.display = hasAlerts ? 'block' : 'none';
+                
+                // Réinitialiser les valeurs par défaut des alertes
+                document.getElementById('editAlertType').value = 'monthly';
+                document.getElementById('editAlertDeadline').value = 20;
+                document.getElementById('editAlertSeverity').value = 'medium';
+                
+                // Réinitialiser toutes les cases à FALSE par défaut
+                const alertDaysCheckboxes = document.querySelectorAll('#editAlertDaysContainer input[type="checkbox"]');
+                alertDaysCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                });
+                
+                // SI alerte existante, charger la configuration
+                if (hasAlerts) {
+                    document.getElementById('editAlertType').value = operation.alertConfig.type || 'monthly';
+                    document.getElementById('editAlertDeadline').value = operation.alertConfig.deadline || 20;
+                    document.getElementById('editAlertSeverity').value = operation.alertConfig.severity || 'medium';
+                    
+                    // Cocher les jours d'alerte selon la configuration existante
+                    alertDaysCheckboxes.forEach(cb => {
+                        cb.checked = operation.alertConfig.alertDays && operation.alertConfig.alertDays.includes(parseInt(cb.value));
+                    });
+                }
+                
+                // Réattacher l'event listener pour le modal d'édition
+                const editEnableAlertsCheckbox = document.getElementById('editEnableAlerts');
+                editEnableAlertsCheckbox.removeEventListener('change', handleEditAlertsToggle);
+                editEnableAlertsCheckbox.addEventListener('change', handleEditAlertsToggle);
+                
                 document.getElementById('editOperationModal').style.display = 'block';
             }
+        }
+
+        function handleEditAlertsToggle() {
+            const editAlertConfig = document.getElementById('editAlertConfig');
+            const modal = document.querySelector('#editOperationModal .modal-content');
+            
+            editAlertConfig.style.display = this.checked ? 'block' : 'none';
+            
+            // Recentrer le modal après changement de taille
+            setTimeout(() => {
+                const modalHeight = modal.offsetHeight;
+                const viewportHeight = window.innerHeight;
+                const newMarginTop = Math.max(5, (viewportHeight - modalHeight) / 2 / viewportHeight * 100);
+                modal.style.marginTop = newMarginTop + '%';
+            }, 50);
         }
 
         function saveEditedOperation() {
@@ -2041,8 +2301,27 @@
                 const operation = clientData.operations.find(op => op.id === currentEditingOperationId);
                 if (operation) {
                     operation.name = newName;
-                    updateTable();
+                    
+                    // Sauvegarder la configuration des alertes
+                    const alertsEnabled = document.getElementById('editEnableAlerts').checked;
+                    
+                    if (alertsEnabled) {
+                        const alertDaysCheckboxes = document.querySelectorAll('#editAlertDaysContainer input[type="checkbox"]:checked');
+                        const alertDays = Array.from(alertDaysCheckboxes).map(cb => parseInt(cb.value));
+                        
+                        operation.alertConfig = {
+                            enabled: true,
+                            type: document.getElementById('editAlertType').value,
+                            deadline: parseInt(document.getElementById('editAlertDeadline').value),
+                            alertDays: alertDays,
+                            severity: document.getElementById('editAlertSeverity').value
+                        };
+                    } else {
+                        operation.alertConfig = null;
+                    }
+                    
                     closeModal('editOperationModal');
+                    updateTable();
                     saveToFirestore();
                     currentEditingOperationId = null;
                 }
@@ -2779,22 +3058,113 @@
                 let clientAlerts = {
                     overdue: [],
                     today: [],
+                    upcoming: [],
                     count: 0
                 };
                 
+                // Alertes des todos (existant)
                 const todos = appData.clientData[clientId].todos || [];
                 todos.filter(todo => todo.status === 'active' && todo.dueDate).forEach(todo => {
                     if (todo.dueDate < today) {
-                        clientAlerts.overdue.push(todo);
+                        clientAlerts.overdue.push({type: 'todo', item: todo});
                     } else if (todo.dueDate === today) {
-                        clientAlerts.today.push(todo);
+                        clientAlerts.today.push({type: 'todo', item: todo});
                     }
+                });
+                
+                // Nouvelles alertes des opérations
+                const operations = appData.clientData[clientId].operations || [];
+                operations.filter(op => op.alertConfig && op.alertConfig.enabled).forEach(operation => {
+                    const alerts = calculateOperationAlerts(operation, today);
+                    alerts.forEach(alert => {
+                        if (alert.isOverdue) {
+                            clientAlerts.overdue.push({type: 'operation', item: operation, alert: alert});
+                        } else if (alert.isToday) {
+                            clientAlerts.today.push({type: 'operation', item: operation, alert: alert});
+                        } else if (alert.isUpcoming) {
+                            clientAlerts.upcoming.push({type: 'operation', item: operation, alert: alert});
+                        }
+                    });
                 });
                 
                 clientAlerts.count = clientAlerts.overdue.length + clientAlerts.today.length;
                 
-                if (clientAlerts.count > 0) {
+                if (clientAlerts.count > 0 || clientAlerts.upcoming.length > 0) {
                     alerts[clientId] = clientAlerts;
+                }
+            }
+            
+            return alerts;
+        }
+
+        function calculateOperationAlerts(operation, today) {
+            const alerts = [];
+            const config = operation.alertConfig;
+            const todayDate = new Date(today);
+            
+            // Calculer la prochaine échéance selon la fréquence
+            let nextDeadline;
+            
+            if (config.type === 'monthly') {
+                // Prochaine échéance mensuelle
+                const currentMonth = todayDate.getMonth();
+                const currentYear = todayDate.getFullYear();
+                let targetMonth = currentMonth + 1;
+                let targetYear = currentYear;
+                
+                if (targetMonth > 11) {
+                    targetMonth = 0;
+                    targetYear++;
+                }
+                
+                nextDeadline = new Date(targetYear, targetMonth, config.deadline);
+            } else if (config.type === 'quarterly') {
+                // Prochaine échéance trimestrielle
+                const currentQuarter = Math.floor(todayDate.getMonth() / 3);
+                const nextQuarter = currentQuarter + 1;
+                let targetMonth = nextQuarter * 3;
+                let targetYear = todayDate.getFullYear();
+                
+                if (targetMonth > 11) {
+                    targetMonth = 0;
+                    targetYear++;
+                }
+                
+                nextDeadline = new Date(targetYear, targetMonth, config.deadline);
+            } else if (config.type === 'yearly') {
+                // Prochaine échéance annuelle (exemple: 31 décembre)
+                nextDeadline = new Date(todayDate.getFullYear() + 1, 11, config.deadline);
+            }
+            
+            if (nextDeadline) {
+                const deadlineStr = nextDeadline.toISOString().split('T')[0];
+                const diffTime = nextDeadline - todayDate;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                // Vérifier si on doit déclencher une alerte
+                config.alertDays.forEach(alertDay => {
+                    if (diffDays === alertDay) {
+                        alerts.push({
+                            deadlineDate: deadlineStr,
+                            daysUntil: diffDays,
+                            severity: config.severity,
+                            isOverdue: diffDays < 0,
+                            isToday: diffDays === 0,
+                            isUpcoming: diffDays > 0 && diffDays <= Math.max(...config.alertDays)
+                        });
+                    }
+                });
+                
+                // Alerte de retard
+                if (diffDays < 0) {
+                    alerts.push({
+                        deadlineDate: deadlineStr,
+                        daysUntil: diffDays,
+                        severity: 'high',
+                        isOverdue: true,
+                        isToday: false,
+                        isUpcoming: false
+                    });
                 }
             }
             
@@ -2827,30 +3197,69 @@
                     
                     const clientDiv = document.createElement('div');
                     clientDiv.className = 'client-alerts';
+                    
+                    let contentHtml = '';
+                    
+                    // Alertes en retard
+                    if (clientAlerts.overdue.length > 0) {
+                        contentHtml += `<div class="alert-section overdue">
+                            <h4>🔴 EN RETARD (${clientAlerts.overdue.length})</h4>`;
+                        
+                        clientAlerts.overdue.forEach(alertItem => {
+                            if (alertItem.type === 'todo') {
+                                const dueDate = new Date(alertItem.item.dueDate);
+                                const today = new Date();
+                                const diffTime = today - dueDate;
+                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                contentHtml += `<div class="alert-task overdue">📝 ${alertItem.item.text} (il y a ${diffDays} jour${diffDays > 1 ? 's' : ''})</div>`;
+                            } else if (alertItem.type === 'operation') {
+                                const daysPast = Math.abs(alertItem.alert.daysUntil);
+                                contentHtml += `<div class="alert-task overdue">🚨 ${alertItem.item.name} (en retard de ${daysPast} jour${daysPast > 1 ? 's' : ''})</div>`;
+                            }
+                        });
+                        
+                        contentHtml += '</div>';
+                    }
+                    
+                    // Alertes aujourd'hui
+                    if (clientAlerts.today.length > 0) {
+                        contentHtml += `<div class="alert-section today">
+                            <h4>🟡 AUJOURD'HUI (${clientAlerts.today.length})</h4>`;
+                        
+                        clientAlerts.today.forEach(alertItem => {
+                            if (alertItem.type === 'todo') {
+                                contentHtml += `<div class="alert-task today">📝 ${alertItem.item.text}</div>`;
+                            } else if (alertItem.type === 'operation') {
+                                contentHtml += `<div class="alert-task today">🚨 ${alertItem.item.name} (échéance aujourd'hui)</div>`;
+                            }
+                        });
+                        
+                        contentHtml += '</div>';
+                    }
+                    
+                    // Alertes à venir (nouvelles)
+                    if (clientAlerts.upcoming && clientAlerts.upcoming.length > 0) {
+                        contentHtml += `<div class="alert-section upcoming">
+                            <h4>📅 À VENIR (${clientAlerts.upcoming.length})</h4>`;
+                        
+                        clientAlerts.upcoming.forEach(alertItem => {
+                            if (alertItem.type === 'operation') {
+                                const daysUntil = alertItem.alert.daysUntil;
+                                const severityIcon = alertItem.alert.severity === 'high' ? '🔴' : alertItem.alert.severity === 'medium' ? '🟡' : '🟢';
+                                contentHtml += `<div class="alert-task upcoming">${severityIcon} ${alertItem.item.name} (dans ${daysUntil} jour${daysUntil > 1 ? 's' : ''})</div>`;
+                            }
+                        });
+                        
+                        contentHtml += '</div>';
+                    }
+                    
                     clientDiv.innerHTML = `
                         <div class="client-alerts-header" onclick="selectClientAndOpenTodos(${clientId})">
                             <span>📋 ${clientName}</span>
                             <span class="alert-count">${clientAlerts.count} alertes</span>
                         </div>
                         <div class="client-alerts-content">
-                            ${clientAlerts.overdue.length > 0 ? `
-                                <div class="alert-section overdue">
-                                    <h4>🔴 EN RETARD (${clientAlerts.overdue.length})</h4>
-                                    ${clientAlerts.overdue.map(todo => {
-                                        const dueDate = new Date(todo.dueDate);
-                                        const today = new Date();
-                                        const diffTime = today - dueDate;
-                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                        return `<div class="alert-task overdue">- ${todo.text} (il y a ${diffDays} jour${diffDays > 1 ? 's' : ''})</div>`;
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                            ${clientAlerts.today.length > 0 ? `
-                                <div class="alert-section today">
-                                    <h4>🟡 AUJOURD'HUI (${clientAlerts.today.length})</h4>
-                                    ${clientAlerts.today.map(todo => `<div class="alert-task today">- ${todo.text}</div>`).join('')}
-                                </div>
-                            ` : ''}
+                            ${contentHtml}
                         </div>
                     `;
                     
@@ -2981,7 +3390,13 @@
                     
                     const operationCell = document.createElement('td');
                     operationCell.className = 'operations-column';
-                    operationCell.textContent = '⋮⋮ ' + operation.name;
+                    
+                    // Indicateur d'alerte si configuré
+                    const hasAlerts = operation.alertConfig && operation.alertConfig.enabled === true;
+                    
+                    const alertIcon = hasAlerts ? ' 🚨' : '';
+                    operationCell.textContent = '⋮⋮ ' + operation.name + alertIcon;
+                    
                     operationCell.draggable = true;
                     operationCell.dataset.operationId = operation.id;
                     operationCell.dataset.familyId = operation.familyId;
