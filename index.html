@@ -2208,7 +2208,7 @@
                 if (originalFamily) {
                     const existingFamily = targetData.families.find(f => f.name === originalFamily.name);
                     if (!existingFamily) {
-                        const newFamilyId = Date.now() + Math.random();
+                        const newFamilyId = Date.now() + Math.floor(Math.random() * 1000);
                         const newFamily = {
                             id: newFamilyId,
                             name: originalFamily.name,
@@ -2236,7 +2236,7 @@
                             if (existingFamily) {
                                 targetFamilyId = existingFamily.id;
                             } else {
-                                const newFamilyId = Date.now() + Math.random();
+                                const newFamilyId = Date.now() + Math.floor(Math.random() * 1000);
                                 const newFamily = {
                                     id: newFamilyId,
                                     name: originalFamily.name,
@@ -2256,7 +2256,7 @@
                         
                         if (!existingOperation) {
                             const newOperation = {
-                                id: Date.now() + Math.random(),
+                                id: Date.now() + Math.floor(Math.random() * 1000),
                                 familyId: targetFamilyId,
                                 name: originalOperation.name,
                                 order: targetData.operations.filter(op => op.familyId === targetFamilyId).length + 1
@@ -2272,8 +2272,17 @@
                 alert(`${copiedCount} élément(s) copié(s) avec succès !`);
                 saveToFirestore();
                 
-                if (appData.currentClient === targetClientId) {
+                // Force la mise à jour de la table si c'est le client de destination
+                if (appData.currentClient == targetClientId) {
                     updateTable();
+                    // Force le réattachement des événements drag & drop
+                    setTimeout(reattachDragEvents, 100);
+                }
+                
+                // Force aussi la mise à jour si on est sur le client source (pour rafraîchir l'affichage)
+                if (appData.currentClient == sourceClientId) {
+                    updateTable();
+                    setTimeout(reattachDragEvents, 100);
                 }
                 
                 closeModal('copyModal');
@@ -3232,13 +3241,34 @@
             }
         }
 
+        // Force la reattachement des événements drag & drop
+        function reattachDragEvents() {
+            const familyCells = document.querySelectorAll('td[data-type="family"]');
+            const operationCells = document.querySelectorAll('td[data-type="operation"]');
+            
+            [...familyCells, ...operationCells].forEach(cell => {
+                // Supprimer les anciens événements si ils existent
+                cell.removeEventListener('dragstart', handleDragStart);
+                cell.removeEventListener('dragover', handleDragOver);
+                cell.removeEventListener('drop', handleDrop);
+                cell.removeEventListener('dragend', handleDragEnd);
+                
+                // Réattacher les événements
+                cell.addEventListener('dragstart', handleDragStart);
+                cell.addEventListener('dragover', handleDragOver);
+                cell.addEventListener('drop', handleDrop);
+                cell.addEventListener('dragend', handleDragEnd);
+                cell.addEventListener('dragenter', function(e) { e.preventDefault(); });
+            });
+        }
+
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
 
         document.getElementById('clientSelect').addEventListener('change', function() {
             appData.currentClient = this.value;
-            updateTable();
+            updateTable(); // Force la mise à jour complète pour attacher les event listeners
             updateTodoBadge();
             updateTodoModal();
         });
