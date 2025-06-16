@@ -1158,6 +1158,7 @@
                 <button class="btn" onclick="openFamilyModal()">Ajouter famille</button>
                 <button class="btn" onclick="openOperationModal()">Ajouter opération</button>
                 <button class="btn" onclick="openCopyModal()" style="background: #9b59b6;">Copier éléments</button>
+                <button class="btn" onclick="openPeriodsModal()" style="background: #34495e;">📊 Dashboard Périodes</button>
                 <button class="btn btn-todo" onclick="openTodoModal()" id="todoBtn">
                     📝 Todo List
                     <span id="alertBadge" class="alert-badge" style="display: none;">0</span>
@@ -1455,6 +1456,62 @@
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-success" onclick="saveComment()">Sauvegarder</button>
                 <button class="btn" style="background: #e74c3c;" onclick="deleteComment()">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Dashboard Périodes -->
+    <div id="periodsModal" class="modal">
+        <div class="modal-content" style="margin: 3% auto; width: 95%; max-width: 1400px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3>📊 Dashboard Périodes - Vue Synthétique</h3>
+                <span class="close" onclick="closeModal('periodsModal')">&times;</span>
+            </div>
+            
+            <!-- Filtres -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-weight: 600; color: #2c3e50;">🔍 Affichage :</span>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="radio" name="periodsFilter" value="all" checked onchange="updatePeriodsDisplay()">
+                            <span>Toutes les tâches</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="radio" name="periodsFilter" value="specific" onchange="updatePeriodsDisplay()">
+                            <span>Opération spécifique :</span>
+                        </label>
+                        <select id="specificOperationSelect" disabled style="min-width: 200px; padding: 5px 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="">Sélectionner une opération</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Légende -->
+            <div style="background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef;">
+                <div style="display: flex; align-items: center; gap: 20px; font-size: 14px;">
+                    <span style="font-weight: 600;">Légende :</span>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 16px; height: 16px; background: #27ae60; border-radius: 3px;"></div>
+                        <span>Traité</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 16px; height: 16px; background: #e74c3c; border-radius: 3px;"></div>
+                        <span>En retard</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 16px; height: 16px; background: #2c3e50; border-radius: 3px;"></div>
+                        <span>Alerte programmée</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tableau des périodes -->
+            <div id="periodsTableContainer" style="overflow-x: auto; border: 1px solid #e9ecef; border-radius: 8px;">
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    Chargement des données...
+                </div>
             </div>
         </div>
     </div>
@@ -3320,6 +3377,349 @@
             closeModal('alertsModal');
             saveToFirestore();
         }
+
+        // ============ DASHBOARD PÉRIODES ============
+
+        function openPeriodsModal() {
+            document.getElementById('periodsModal').style.display = 'block';
+            loadOperationsWithAlerts();
+            updatePeriodsDisplay();
+        }
+
+        function loadOperationsWithAlerts() {
+            const operationsWithAlerts = new Set();
+            
+            // Parcourir tous les clients pour trouver les opérations avec alertes
+            for (let clientId in appData.clientData) {
+                const operations = appData.clientData[clientId].operations || [];
+                operations.forEach(operation => {
+                    if (operation.alertConfig && operation.alertConfig.enabled) {
+                        operationsWithAlerts.add(operation.name);
+                    }
+                });
+            }
+            
+            // Remplir le dropdown des opérations
+            const select = document.getElementById('specificOperationSelect');
+            select.innerHTML = '<option value="">Sélectionner une opération</option>';
+            
+            [...operationsWithAlerts].sort().forEach(operationName => {
+                const option = document.createElement('option');
+                option.value = operationName;
+                option.textContent = operationName;
+                select.appendChild(option);
+            });
+        }
+
+        function updatePeriodsDisplay() {
+            const filterType = document.querySelector('input[name="periodsFilter"]:checked').value;
+            const specificOperation = document.getElementById('specificOperationSelect').value;
+            const container = document.getElementById('periodsTableContainer');
+            
+            // Activer/désactiver le dropdown d'opération spécifique
+            document.getElementById('specificOperationSelect').disabled = filterType !== 'specific';
+            
+            if (filterType === 'specific' && !specificOperation) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Sélectionnez une opération spécifique</div>';
+                return;
+            }
+            
+            // Calculer les périodes à afficher
+            const periodsData = calculatePeriodsData(filterType, specificOperation);
+            
+            if (Object.keys(periodsData).length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Aucune donnée à afficher</div>';
+                return;
+            }
+            
+            // Générer le tableau
+            generatePeriodsTable(periodsData, container);
+            
+            // Attacher l'event listener pour le dropdown
+            document.getElementById('specificOperationSelect').addEventListener('change', updatePeriodsDisplay);
+        }
+
+        function calculatePeriodsData(filterType, specificOperation) {
+            const periodsData = {};
+            const today = new Date();
+            
+            // Filtrer pour afficher seulement les clients actifs
+            const activeClients = appData.clients.filter(client => client.status !== 'archived');
+            
+            activeClients.forEach(client => {
+                const clientData = appData.clientData[client.id];
+                if (!clientData) return;
+                
+                const operations = clientData.operations || [];
+                let relevantOperations = [];
+                
+                if (filterType === 'all') {
+                    relevantOperations = operations.filter(op => op.alertConfig && op.alertConfig.enabled);
+                } else if (filterType === 'specific' && specificOperation) {
+                    relevantOperations = operations.filter(op => 
+                        op.alertConfig && op.alertConfig.enabled && op.name === specificOperation
+                    );
+                }
+                
+                if (relevantOperations.length === 0) return;
+                
+                periodsData[client.id] = {
+                    clientName: client.name,
+                    operations: []
+                };
+                
+                relevantOperations.forEach(operation => {
+                    const operationPeriods = calculateOperationPeriods(operation, clientData, today);
+                    if (operationPeriods.periods.length > 0) {
+                        periodsData[client.id].operations.push({
+                            name: operation.name,
+                            periods: operationPeriods.periods,
+                            allPeriods: operationPeriods.allPeriods
+                        });
+                    }
+                });
+                
+                // Supprimer le client si aucune opération n'a de périodes
+                if (periodsData[client.id].operations.length === 0) {
+                    delete periodsData[client.id];
+                }
+            });
+            
+            return periodsData;
+        }
+
+        function calculateOperationPeriods(operation, clientData, today) {
+            const periods = [];
+            const allPeriods = new Set();
+            const config = operation.alertConfig;
+            
+            // Générer les périodes selon la fréquence (9 mois avant à 9 mois après pour voir 18 mois)
+            const startDate = new Date(today.getFullYear(), today.getMonth() - 9, 1);
+            const endDate = new Date(today.getFullYear(), today.getMonth() + 9, 1);
+            
+            let currentDate = new Date(startDate);
+            
+            while (currentDate <= endDate) {
+                let shouldInclude = false;
+                
+                if (config.type === 'monthly') {
+                    shouldInclude = true;
+                } else if (config.type === 'quarterly') {
+                    shouldInclude = [0, 3, 6, 9].includes(currentDate.getMonth());
+                } else if (config.type === 'yearly') {
+                    shouldInclude = currentDate.getMonth() === 11; // Décembre
+                }
+                
+                if (shouldInclude) {
+                    const periodKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                    allPeriods.add(periodKey);
+                    
+                    // Vérifier le statut de cette période
+                    const status = getOperationPeriodStatus(operation, clientData, currentDate, config);
+                    
+                    periods.push({
+                        key: periodKey,
+                        display: `${getMonthName(currentDate.getMonth())} ${currentDate.getFullYear().toString().substr(2)}`,
+                        status: status,
+                        year: currentDate.getFullYear(),
+                        month: currentDate.getMonth() + 1
+                    });
+                }
+                
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            }
+            
+            return { periods, allPeriods };
+        }
+
+        function getOperationPeriodStatus(operation, clientData, periodDate, config) {
+            // Vérifier s'il y a des tâches exécutées pour cette opération dans cette période
+            const tasks = clientData.tasks || {};
+            let hasCompleted = false;
+            let hasAnyTask = false;
+            
+            for (let taskKey in tasks) {
+                if (taskKey.startsWith(operation.id + '_')) {
+                    const task = tasks[taskKey];
+                    const [operationId, dateStr] = taskKey.split('_');
+                    
+                    hasAnyTask = true;
+                    
+                    // Vérifier si cette tâche concerne la période
+                    let taskConcernsPeriod = false;
+                    
+                    if (task.concernedMonth && task.concernedYear) {
+                        // Tâche avec période spécifiée
+                        const taskMonth = parseInt(task.concernedMonth);
+                        const taskYear = parseInt(task.concernedYear);
+                        taskConcernsPeriod = (taskMonth === periodDate.getMonth() + 1 && taskYear === periodDate.getFullYear());
+                    } else {
+                        // Tâche sans période spécifiée, utiliser la date d'exécution
+                        const taskDate = new Date(dateStr);
+                        taskConcernsPeriod = (taskDate.getMonth() === periodDate.getMonth() && taskDate.getFullYear() === periodDate.getFullYear());
+                    }
+                    
+                    if (taskConcernsPeriod && task.status === 'completed') {
+                        hasCompleted = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasCompleted) {
+                return 'completed'; // Vert
+            }
+            
+            // Vérifier si la période est due
+            const deadlineDate = new Date(periodDate.getFullYear(), periodDate.getMonth(), config.deadline);
+            const today = new Date();
+            
+            if (deadlineDate < today) {
+                return 'overdue'; // Rouge
+            } else {
+                return 'scheduled'; // Noir (alerte programmée)
+            }
+        }
+
+        function getMonthName(monthIndex) {
+            const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 
+                          'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+            return months[monthIndex];
+        }
+
+        function generatePeriodsTable(periodsData, container) {
+            // Collecter toutes les périodes uniques
+            const allPeriods = new Set();
+            Object.values(periodsData).forEach(clientData => {
+                clientData.operations.forEach(operation => {
+                    operation.periods.forEach(period => {
+                        allPeriods.add(period.key);
+                    });
+                });
+            });
+            
+            const sortedPeriods = [...allPeriods].sort();
+            
+            if (sortedPeriods.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Aucune période à afficher</div>';
+                return;
+            }
+            
+            // Créer le tableau avec le style du planning principal
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; background: white; table-layout: fixed;">
+                    <colgroup>
+                        <col style="width: 60px;">
+            `;
+            
+            sortedPeriods.forEach(() => {
+                html += '<col style="width: 10px;">';
+            });
+            
+            html += `
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th style="background: #f8f9fa; font-weight: 600; padding: 0; text-align: center; vertical-align: middle; border: 1px solid #e9ecef; position: sticky; left: 0; z-index: 10; height: 60px;">
+                                <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 2px; font-size: 12px;">Client / Opération</div>
+                            </th>
+            `;
+            
+            sortedPeriods.forEach(periodKey => {
+                const [year, month] = periodKey.split('-');
+                const monthName = getMonthName(parseInt(month) - 1);
+                html += `
+                    <th style="background: #f8f9fa; font-weight: 600; padding: 1px; text-align: center; vertical-align: middle; border: 1px solid #e9ecef; height: 60px; width: 10px; font-size: 12px; position: relative;">
+                        <div style="writing-mode: vertical-lr; text-orientation: mixed; transform: rotate(180deg); white-space: nowrap; height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                            ${monthName} ${year.substr(2)}
+                        </div>
+                    </th>
+                `;
+            });
+            
+            html += '</tr></thead><tbody>';
+            
+            // Générer les lignes pour chaque client
+            Object.entries(periodsData).forEach(([clientId, clientData]) => {
+                // Ligne d'en-tête client (style famille)
+                html += `
+                    <tr style="height: 20px;">
+                        <td style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; font-size: 12px; font-weight: bold; text-align: left; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; position: sticky; left: 0; z-index: 5; border: 1px solid #e9ecef;">
+                            👤 ${clientData.clientName}
+                        </td>
+                `;
+                
+                sortedPeriods.forEach(() => {
+                    html += '<td style="border: 1px solid #e9ecef; background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); height: 20px; width: 10px;"></td>';
+                });
+                
+                html += '</tr>';
+                
+                // Lignes d'opérations (style opération)
+                clientData.operations.forEach(operation => {
+                    html += `
+                        <tr style="height: 20px;">
+                            <td style="background: white; color: #2c3e50; font-size: 12px; text-align: left; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; position: sticky; left: 0; background: white; z-index: 5; border: 1px solid #e9ecef;">
+                                <span style="color: #3498db; font-weight: bold; margin-right: 1px;">•</span> ${operation.name}
+                            </td>
+                    `;
+                    
+                    sortedPeriods.forEach(periodKey => {
+                        const period = operation.periods.find(p => p.key === periodKey);
+                        let cellStyle = 'padding: 1px; border: 1px solid #e9ecef; text-align: center; vertical-align: middle; cursor: pointer; height: 20px; width: 10px;';
+                        let cellContent = '';
+                        
+                        if (period) {
+                            // Créer une div interne similaire aux status-btn mais plus petite
+                            let btnStyle = 'width: 10px; height: 10px; border: 1px solid #ddd; border-radius: 2px; margin: 0 auto; transition: all 0.3s ease;';
+                            
+                            switch (period.status) {
+                                case 'completed':
+                                    btnStyle += ' background: #27ae60; border-color: #27ae60;'; // Vert
+                                    break;
+                                case 'overdue':
+                                    btnStyle += ' background: #e74c3c; border-color: #e74c3c;'; // Rouge
+                                    break;
+                                case 'scheduled':
+                                    btnStyle += ' background: #2c3e50; border-color: #2c3e50;'; // Noir
+                                    break;
+                            }
+                            
+                            cellContent = `onclick="openClientPeriod('${clientId}', '${period.year}', '${period.month}')"`;
+                            cellContent = `<div style="${btnStyle}" ${cellContent}></div>`;
+                        } else {
+                            cellStyle += ' background: #f8f9fa;';
+                            cellContent = '<div style="width: 10px; height: 10px; margin: 0 auto;"></div>';
+                        }
+                        
+                        html += `<td style="${cellStyle}">${cellContent}</td>`;
+                    });
+                    
+                    html += '</tr>';
+                });
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function openClientPeriod(clientId, year, month) {
+            // Fermer le modal des périodes
+            closeModal('periodsModal');
+            
+            // Sélectionner le client
+            appData.currentClient = clientId;
+            document.getElementById('clientSelect').value = clientId;
+            
+            // Mettre à jour la table principale
+            updateTable();
+            updateTodoBadge();
+            
+            // TODO: Optionnel - Scroll vers les dates du mois concerné dans le tableau principal
+            console.log(`Navigation vers Client ${clientId}, ${month}/${year}`);
+        }
+
+        // ============ FIN DASHBOARD PÉRIODES ============
 
         function getClientData() {
             if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [] };
