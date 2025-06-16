@@ -509,6 +509,11 @@
             background-color: rgba(0,0,0,0.5);
         }
 
+        /* Modal d'édition client au premier plan */
+        #editClientModal {
+            z-index: 1100;
+        }
+
         .modal-content {
             background-color: white;
             margin: 15% auto;
@@ -1178,7 +1183,7 @@
     </div>
 
     <div id="clientModal" class="modal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 700px !important; height: 800px !important; position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; overflow-y: auto !important; margin: 0 !important;">
             <div class="modal-header">
                 <h3>Gestion des clients</h3>
                 <span class="close" onclick="closeModal('clientModal')">&times;</span>
@@ -1200,7 +1205,7 @@
             </div>
             
             <!-- Liste des clients -->
-            <div id="clientList" style="max-height: 400px; overflow-y: auto;"></div>
+            <div id="clientList" style="max-height: 650px; overflow-y: auto;"></div>
         </div>
     </div>
 
@@ -1744,7 +1749,10 @@
                 return;
             }
             
-            filteredClients.forEach(client => {
+            // Trier les clients par ordre alphabétique croissant
+            const sortedClients = [...filteredClients].sort((a, b) => a.name.localeCompare(b.name));
+            
+            sortedClients.forEach(client => {
                 const div = document.createElement('div');
                 const isArchived = client.status === 'archived';
                 
