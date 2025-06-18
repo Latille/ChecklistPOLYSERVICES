@@ -374,7 +374,8 @@
         }
 
         .family-row:hover .edit-delete-buttons,
-        .operation-row:hover .edit-delete-buttons {
+        .operation-row:hover .edit-delete-buttons,
+        .date-column:hover .edit-delete-buttons {
             display: flex;
             z-index: 1000;
         }
@@ -1516,6 +1517,25 @@
         </div>
     </div>
 
+    <!-- Modal Edition Date -->
+    <div id="editDateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Modifier la date</h3>
+                <span class="close" onclick="closeModal('editDateModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="editDateInput">Nouvelle date :</label>
+                <input type="date" id="editDateInput">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="saveEditedDate()">Sauvegarder</button>
+                <button class="btn" style="background: #e74c3c;" onclick="deleteDate()">Supprimer cette date</button>
+                <button class="btn" onclick="closeModal('editDateModal')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Todo List -->
     <div id="todoModal" class="modal">
         <div class="modal-content todo-modal">
@@ -2173,6 +2193,126 @@
                 dateInput.value = '';
                 updateTable();
                 saveToFirestore();
+            }
+        }
+
+        // Variables pour l'édition de date
+        let currentEditingDate = null;
+
+        function openEditDateModal(date) {
+            currentEditingDate = date;
+            document.getElementById('editDateInput').value = date;
+            document.getElementById('editDateModal').style.display = 'block';
+        }
+
+        function saveEditedDate() {
+            const newDate = document.getElementById('editDateInput').value;
+            
+            if (!newDate || !currentEditingDate) {
+                if (!newDate) {
+                    alert('Veuillez sélectionner une date');
+                }
+                return;
+            }
+            
+            if (!appData.currentClient) {
+                alert('Aucun client sélectionné');
+                return;
+            }
+            
+            const clientData = getClientData();
+            
+            // Vérifier que la nouvelle date n'existe pas déjà
+            if (newDate !== currentEditingDate && clientData.dates.includes(newDate)) {
+                alert('Cette date existe déjà');
+                return;
+            }
+            
+            // Remplacer l'ancienne date par la nouvelle
+            const dateIndex = clientData.dates.indexOf(currentEditingDate);
+            if (dateIndex !== -1) {
+                clientData.dates[dateIndex] = newDate;
+                clientData.dates.sort();
+                
+                // Mettre à jour toutes les tâches associées à cette date
+                const updatedTasks = {};
+                for (let taskKey in clientData.tasks) {
+                    if (taskKey.endsWith('_' + currentEditingDate)) {
+                        const operationId = taskKey.split('_')[0];
+                        const newTaskKey = operationId + '_' + newDate;
+                        updatedTasks[newTaskKey] = clientData.tasks[taskKey];
+                    } else {
+                        updatedTasks[taskKey] = clientData.tasks[taskKey];
+                    }
+                }
+                clientData.tasks = updatedTasks;
+                
+                updateTable();
+                closeModal('editDateModal');
+                saveToFirestore();
+                currentEditingDate = null;
+            }
+        }
+
+        function confirmDeleteDate(date) {
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer la date ${date} ?\n\nToutes les tâches associées à cette date seront également supprimées.`)) {
+                return;
+            }
+            
+            if (!appData.currentClient) {
+                alert('Aucun client sélectionné');
+                return;
+            }
+            
+            const clientData = getClientData();
+            
+            // Supprimer la date
+            const dateIndex = clientData.dates.indexOf(date);
+            if (dateIndex !== -1) {
+                clientData.dates.splice(dateIndex, 1);
+                
+                // Supprimer toutes les tâches associées à cette date
+                for (let taskKey in clientData.tasks) {
+                    if (taskKey.endsWith('_' + date)) {
+                        delete clientData.tasks[taskKey];
+                    }
+                }
+                
+                updateTable();
+                saveToFirestore();
+            }
+        }
+
+        function deleteDate() {
+            if (!currentEditingDate) return;
+            
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer la date ${currentEditingDate} ?\n\nToutes les tâches associées à cette date seront également supprimées.`)) {
+                return;
+            }
+            
+            if (!appData.currentClient) {
+                alert('Aucun client sélectionné');
+                return;
+            }
+            
+            const clientData = getClientData();
+            
+            // Supprimer la date
+            const dateIndex = clientData.dates.indexOf(currentEditingDate);
+            if (dateIndex !== -1) {
+                clientData.dates.splice(dateIndex, 1);
+                
+                // Supprimer toutes les tâches associées à cette date
+                for (let taskKey in clientData.tasks) {
+                    if (taskKey.endsWith('_' + currentEditingDate)) {
+                        delete clientData.tasks[taskKey];
+                    }
+                }
+                
+                updateTable();
+                closeModal('editDateModal');
+                saveToFirestore();
+                currentEditingDate = null;
             }
         }
 
@@ -3763,12 +3903,39 @@
             clientData.dates.forEach(date => {
                 const th = document.createElement('th');
                 th.className = 'date-column';
+                th.style.position = 'relative';
+                
                 const dateObj = new Date(date);
                 
                 const dateSpan = document.createElement('span');
                 dateSpan.className = 'date-text';
                 dateSpan.textContent = dateObj.toLocaleDateString('fr-FR');
                 th.appendChild(dateSpan);
+                
+                // Ajouter les boutons d'édition/suppression
+                const editDeleteDiv = document.createElement('div');
+                editDeleteDiv.className = 'edit-delete-buttons';
+                editDeleteDiv.style.cssText = `
+                    display: none;
+                    position: absolute;
+                    top: 5px;
+                    right: 2px;
+                    gap: 2px;
+                    z-index: 1000;
+                `;
+                editDeleteDiv.innerHTML = `
+                    <button class="btn-mini btn-edit" onclick="event.stopPropagation(); openEditDateModal('${date}')" title="Modifier la date">✏️</button>
+                    <button class="btn-mini btn-delete" onclick="event.stopPropagation(); confirmDeleteDate('${date}')" title="Supprimer la date">🗑️</button>
+                `;
+                th.appendChild(editDeleteDiv);
+                
+                // Événements hover pour afficher/masquer les boutons
+                th.addEventListener('mouseenter', function() {
+                    editDeleteDiv.style.display = 'flex';
+                });
+                th.addEventListener('mouseleave', function() {
+                    editDeleteDiv.style.display = 'none';
+                });
                 
                 const month = dateObj.getMonth();
                 if (month % 2 === 0) {
@@ -4184,6 +4351,23 @@
 
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
+            
+            // Réinitialiser les variables d'édition
+            if (modalId === 'editDateModal') {
+                currentEditingDate = null;
+            }
+            if (modalId === 'editClientModal') {
+                currentEditingClientId = null;
+            }
+            if (modalId === 'editFamilyModal') {
+                currentEditingFamilyId = null;
+            }
+            if (modalId === 'editOperationModal') {
+                currentEditingOperationId = null;
+            }
+            if (modalId === 'editTodoModal') {
+                appData.currentEditingTodoId = null;
+            }
         }
 
         document.getElementById('clientSelect').addEventListener('change', function() {
