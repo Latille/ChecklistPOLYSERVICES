@@ -324,6 +324,29 @@
             position: relative;
         }
 
+        .family-toggle-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0 4px 0 0;
+            margin-right: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .family-toggle-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .family-toggle-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .operation-row.hidden {
+            display: none;
+        }
+
         .operation-row {
             height: 24px;
             cursor: move;
@@ -1033,6 +1056,30 @@
             font-size: 18px;
         }
 
+        /* Styles pour le collapse des clients dans le dashboard périodes */
+        .client-toggle-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0 4px 0 0;
+            margin-right: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .client-toggle-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .client-toggle-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .client-operation-row.hidden {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -1679,6 +1726,9 @@
             alertsDismissedToday: null
         };
 
+        // État local pour le collapse des clients dans le dashboard périodes
+        let periodsClientsCollapsed = {};
+
         // Gestion de l'authentification
         function checkPassword() {
             const inputPassword = document.getElementById('passwordInput').value;
@@ -1758,6 +1808,17 @@
                         }
                     });
                     
+                    // Migration : ajouter la propriété 'collapsed' aux familles existantes qui n'en ont pas
+                    for (let clientId in appData.clientData) {
+                        if (appData.clientData[clientId].families) {
+                            appData.clientData[clientId].families.forEach(family => {
+                                if (family.collapsed === undefined) {
+                                    family.collapsed = false;
+                                }
+                            });
+                        }
+                    }
+                    
                     console.log('✅ Données chargées depuis Firestore');
                 } else {
                     console.log('📋 Chargement des données d\'exemple');
@@ -1785,8 +1846,8 @@
 
             appData.clientData[1] = {
                 families: [
-                    { id: 1, name: 'Maint prévent', order: 1 },
-                    { id: 2, name: 'Ctrl qualité', order: 2 }
+                    { id: 1, name: 'Maint prévent', order: 1, collapsed: false },
+                    { id: 2, name: 'Ctrl qualité', order: 2, collapsed: false }
                 ],
                 operations: [
                     { 
@@ -1833,8 +1894,8 @@
 
             appData.clientData[2] = {
                 families: [
-                    { id: 5, name: 'Sécurité site', order: 1 },
-                    { id: 6, name: 'Nettoyage', order: 2 }
+                    { id: 5, name: 'Sécurité site', order: 1, collapsed: false },
+                    { id: 6, name: 'Nettoyage', order: 2, collapsed: false }
                 ],
                 operations: [
                     { 
@@ -2328,7 +2389,8 @@
                 const newFamily = {
                     id: Date.now(),
                     name: name,
-                    order: clientData.families.length + 1
+                    order: clientData.families.length + 1,
+                    collapsed: false
                 };
                 clientData.families.push(newFamily);
                 document.getElementById('familyName').value = '';
@@ -2338,6 +2400,17 @@
                 saveToFirestore();
             } else if (!appData.currentClient) {
                 alert('Veuillez sélectionner un client d\'abord');
+            }
+        }
+
+        // Fonction pour toggle l'état collapsed d'une famille
+        function toggleFamilyCollapse(familyId) {
+            const clientData = getClientData();
+            const family = clientData.families.find(f => f.id === familyId);
+            if (family) {
+                family.collapsed = !family.collapsed;
+                updateTable();
+                saveToFirestore();
             }
         }
 
@@ -3524,6 +3597,14 @@
             document.getElementById('periodsModal').style.display = 'block';
             loadOperationsWithAlerts();
             updatePeriodsDisplay();
+            // Réinitialiser l'état collapsed des clients
+            periodsClientsCollapsed = {};
+        }
+
+        // Fonction pour toggle l'état collapsed d'un client dans le dashboard périodes
+        function toggleClientCollapse(clientId) {
+            periodsClientsCollapsed[clientId] = !periodsClientsCollapsed[clientId];
+            updatePeriodsDisplay();
         }
 
         function loadOperationsWithAlerts() {
@@ -3781,11 +3862,13 @@
             
             // Générer les lignes pour chaque client
             Object.entries(periodsData).forEach(([clientId, clientData]) => {
+                const isCollapsed = periodsClientsCollapsed[clientId] || false;
+                
                 // Ligne d'en-tête client (style famille)
                 html += `
                     <tr style="height: 20px;">
-                        <td style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; font-size: 12px; font-weight: bold; text-align: left; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; position: sticky; left: 0; z-index: 5; border: 1px solid #e9ecef;">
-                            👤 ${clientData.clientName}
+                        <td style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; font-size: 12px; font-weight: bold; text-align: left; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; position: sticky; left: 0; z-index: 5; border: 1px solid #e9ecef; cursor: pointer;" onclick="toggleClientCollapse('${clientId}')">
+                            <button class="client-toggle-btn ${isCollapsed ? 'collapsed' : ''}" style="color: white; background: none; border: none; font-size: 12px; margin-right: 2px;">▼</button>👤 ${clientData.clientName}
                         </td>
                 `;
                 
@@ -3795,10 +3878,11 @@
                 
                 html += '</tr>';
                 
-                // Lignes d'opérations (style opération)
+                // Lignes d'opérations (style opération) - affichage conditionnel
                 clientData.operations.forEach(operation => {
+                    const operationStyle = isCollapsed ? 'display: none;' : '';
                     html += `
-                        <tr style="height: 20px;">
+                        <tr class="client-operation-row ${isCollapsed ? 'hidden' : ''}" style="height: 20px; ${operationStyle}">
                             <td style="background: white; color: #2c3e50; font-size: 12px; text-align: left; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 20px; position: sticky; left: 0; background: white; z-index: 5; border: 1px solid #e9ecef;">
                                 <span style="color: #3498db; font-weight: bold; margin-right: 1px;">•</span> ${operation.name}
                             </td>
@@ -3953,7 +4037,20 @@
                 
                 const familyCell = document.createElement('td');
                 familyCell.className = 'operations-column';
-                familyCell.textContent = '⋮⋮ ' + family.name;
+                
+                // Bouton toggle pour expand/collapse
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = `family-toggle-btn ${family.collapsed ? 'collapsed' : ''}`;
+                toggleBtn.innerHTML = '▼';
+                toggleBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleFamilyCollapse(family.id);
+                };
+                toggleBtn.title = family.collapsed ? 'Développer' : 'Réduire';
+                
+                familyCell.appendChild(toggleBtn);
+                familyCell.appendChild(document.createTextNode('⋮⋮ ' + family.name));
+                
                 familyCell.draggable = true;
                 familyCell.dataset.familyId = family.id;
                 familyCell.dataset.type = 'family';
@@ -3988,7 +4085,7 @@
                 
                 operations.forEach(operation => {
                     const operationRow = document.createElement('tr');
-                    operationRow.className = 'operation-row';
+                    operationRow.className = `operation-row ${family.collapsed ? 'hidden' : ''}`;
                     
                     const operationCell = document.createElement('td');
                     operationCell.className = 'operations-column';
