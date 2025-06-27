@@ -568,9 +568,11 @@
         .modal-content.todo-modal {
             margin: 3% auto;
             width: 95%;
-            max-width: 1300px;
-            max-height: 130vh;
-            overflow-y: auto;
+            max-width: 1400px;
+            height: 80vh;
+            max-height: 80vh;
+            overflow-y: hidden;
+            padding: 10px;
         }
 
         .modal-content.alerts-modal {
@@ -596,7 +598,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
         }
 
         .close {
@@ -1080,6 +1083,199 @@
             display: none;
         }
 
+        /* Styles Notes */
+        .notes-add-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .notes-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .notes-form-full {
+            grid-column: 1 / -1;
+        }
+
+        .note-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .note-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .note-card.dragging {
+            opacity: 0.5;
+            transform: rotate(1deg);
+        }
+
+        .note-card.drag-over {
+            border-color: #8e44ad;
+            border-width: 2px;
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .note-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-date {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .note-recipient {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .note-action-type {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .note-action-type.information {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .note-action-type.execution {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .note-action-type.none {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .note-content {
+            margin: 6px 0;
+            line-height: 1.4;
+            color: #2c3e50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 6px;
+        }
+
+        .notes-list {
+            max-height: none;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .notes-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .notes-search {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .notes-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notes-filter-group label {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+        }
+
+        .notes-filter-group select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: 120px;
+        }
+
+        .notes-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .notes-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notes-stat-count {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .notes-empty {
+            text-align: center;
+            padding: 60px 40px;
+            color: #666;
+        }
+
+        .notes-empty h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .notes-empty p {
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -1210,6 +1406,10 @@
                 <button class="btn btn-todo" onclick="openTodoModal()" id="todoBtn">
                     📝 Todo List
                     <span id="alertBadge" class="alert-badge" style="display: none;">0</span>
+                </button>
+                <button class="btn" onclick="openNotesModal()" id="notesBtn" style="background: #8e44ad;">
+                    📝 Notes
+                    <span id="notesBadge" class="alert-badge" style="display: none;">0</span>
                 </button>
             </div>
 
@@ -1671,6 +1871,189 @@
         </div>
     </div>
 
+    <!-- Modal Notes -->
+    <div id="notesModal" class="modal">
+        <div class="modal-content todo-modal">
+            <div class="modal-header" style="margin-bottom: 5px;">
+                <h3 id="notesModalTitle">📝 Notes - Sélectionner un client</h3>
+                <span class="close" onclick="closeModal('notesModal')">&times;</span>
+            </div>
+            
+            <!-- Layout en 2 colonnes -->
+            <div style="display: grid; grid-template-columns: 600px 750px; gap: 15px; height: calc(80vh - 60px);">
+                
+                <!-- Colonne de gauche : Contrôles -->
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    
+                    <!-- Onglets -->
+                    <div class="todo-tabs" style="margin-bottom: 8px;">
+                        <button class="todo-tab active" onclick="switchNotesTab('all')" id="tabAllNotes">📋 Toutes (0)</button>
+                        <button class="todo-tab" onclick="switchNotesTab('execution')" id="tabExecutionNotes">⚡ Exéc (0)</button>
+                        <button class="todo-tab" onclick="switchNotesTab('information')" id="tabInformationNotes">📋 Info (0)</button>
+                    </div>
+
+                    <!-- Statistiques -->
+                    <div class="notes-stats" id="notesStats" style="display: none; margin-bottom: 8px; padding: 15px; font-size: 14px;">
+                        <div class="notes-stat">
+                            <span>📊 Total :</span>
+                            <span class="notes-stat-count" id="statTotal">0</span>
+                        </div>
+                        <div class="notes-stat">
+                            <span>⚡ Exéc :</span>
+                            <span class="notes-stat-count" id="statExecution">0</span>
+                        </div>
+                        <div class="notes-stat">
+                            <span>📋 Info :</span>
+                            <span class="notes-stat-count" id="statInformation">0</span>
+                        </div>
+                        <div class="notes-stat">
+                            <span>📝 Neutres :</span>
+                            <span class="notes-stat-count" id="statNone">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Filtres et recherche -->
+                    <div class="notes-filters" id="notesFilters" style="display: none; margin-bottom: 8px; flex-direction: column; gap: 8px;">
+                        <input type="text" class="notes-search" id="notesSearch" placeholder="🔍 Rechercher..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="notes-filter-group">
+                                <label style="font-size: 14px; margin-bottom: 5px; display: block;">Tri :</label>
+                                <select id="notesSortBy" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                    <option value="date-desc">Date (récent)</option>
+                                    <option value="date-asc">Date (ancien)</option>
+                                    <option value="recipient-asc">Destinataire (A-Z)</option>
+                                    <option value="recipient-desc">Destinataire (Z-A)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="notes-filter-group">
+                                <label style="font-size: 14px; margin-bottom: 5px; display: block;">Destinataire :</label>
+                                <select id="notesFilterRecipient" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                    <option value="">Tous</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="notes-filter-group">
+                            <label style="font-size: 14px; margin-bottom: 5px; display: block;">Période :</label>
+                            <select id="notesFilterPeriod" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                <option value="">Toutes</option>
+                                <option value="today">Aujourd'hui</option>
+                                <option value="week">Cette semaine</option>
+                                <option value="month">Ce mois</option>
+                                <option value="custom">Personnalisée</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Période personnalisée -->
+                    <div class="notes-filters" id="notesCustomPeriod" style="display: none; margin-bottom: 8px; flex-direction: column; gap: 8px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="notes-filter-group">
+                                <label style="font-size: 14px; margin-bottom: 5px; display: block;">Du :</label>
+                                <input type="date" id="notesDateFrom" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                            </div>
+                            <div class="notes-filter-group">
+                                <label style="font-size: 14px; margin-bottom: 5px; display: block;">Au :</label>
+                                <input type="date" id="notesDateTo" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                            </div>
+                        </div>
+                        <button class="btn" onclick="applyCustomPeriod()" style="background: #8e44ad; padding: 8px 16px; border-radius: 6px; font-size: 14px;">Appliquer</button>
+                    </div>
+
+                    <!-- Formulaire d'ajout -->
+                    <div class="todo-add-form" id="notesAddForm" style="display: none; margin-bottom: 0; padding: 15px; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; gap: 10px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="noteDate" style="font-size: 14px; margin-bottom: 5px; display: block; font-weight: 600;">Date :</label>
+                                <input type="date" id="noteDate" style="width: 240px !important; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="noteActionType" style="font-size: 14px; margin-bottom: 5px; display: block; font-weight: 600;">Type :</label>
+                                <select id="noteActionType" style="width: 240px !important; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                    <option value="none">📝 Générale</option>
+                                    <option value="information">📋 Information</option>
+                                    <option value="execution">⚡ Exécution</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="noteRecipient" style="font-size: 14px; margin-bottom: 5px; display: block; font-weight: 600;">Destinataire (optionnel) :</label>
+                            <input type="text" id="noteRecipient" placeholder="Laissez vide pour note interne" list="recipientSuggestions" style="width: 560px !important; max-width: 560px !important; min-width: 560px !important; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box !important;">
+                            <datalist id="recipientSuggestions"></datalist>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="noteContent" style="font-size: 14px; margin-bottom: 5px; display: block; font-weight: 600;">Contenu :</label>
+                            <textarea id="noteContent" placeholder="Saisissez le contenu de votre note..." style="width: 560px !important; height: 120px; resize: vertical; line-height: 1.3; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"></textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-success" onclick="addNote()" style="padding: 8px 16px; border-radius: 6px; font-size: 14px;">Ajouter</button>
+                            <button class="btn" onclick="clearNoteForm()" style="padding: 8px 16px; border-radius: 6px; font-size: 14px;">Effacer</button>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Colonne de droite : Liste des notes -->
+                <div style="display: flex; flex-direction: column;">
+                    <div class="notes-list" id="notesList" style="height: calc(80vh - 200px); overflow-y: scroll; border: 1px solid #ddd; border-radius: 6px; background: white; padding: 8px; resize: vertical;">
+                        <div class="notes-empty">
+                            <div style="font-size: 48px; margin-bottom: 20px;">📝</div>
+                            <h3>Gestion des notes par client</h3>
+                            <p>Sélectionnez un client dans le menu déroulant principal<br>pour voir et gérer ses notes.</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'édition de note -->
+    <div id="editNoteModal" class="modal">
+        <div class="modal-content edit-todo-modal">
+            <div class="modal-header">
+                <h3>Modifier la note</h3>
+                <span class="close" onclick="closeModal('editNoteModal')">&times;</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="editNoteDate">Date :</label>
+                    <input type="date" id="editNoteDate">
+                </div>
+                <div class="form-group">
+                    <label for="editNoteActionType">Type d'action :</label>
+                    <select id="editNoteActionType">
+                        <option value="none">📝 Aucune action spécifique</option>
+                        <option value="information">📋 Pour information</option>
+                        <option value="execution">⚡ Pour exécution</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="editNoteRecipient">Destinataire (optionnel) :</label>
+                <input type="text" id="editNoteRecipient" placeholder="Nom du destinataire (laissez vide pour note interne)" list="editRecipientSuggestions">
+                <datalist id="editRecipientSuggestions"></datalist>
+            </div>
+            
+            <div class="form-group">
+                <label for="editNoteContent">Contenu :</label>
+                <textarea id="editNoteContent" placeholder="Contenu de la note" style="height: 100px; resize: vertical; line-height: 1.4;"></textarea>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button class="btn btn-success" onclick="saveEditedNote()">Sauvegarder</button>
+                <button class="btn" onclick="closeModal('editNoteModal')" style="margin-left: 10px;">Annuler</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     
@@ -1723,7 +2106,18 @@
             currentClientTab: 'active',
             isAddingFavorite: false,
             currentEditingTodoId: null,
-            alertsDismissedToday: null
+            alertsDismissedToday: null,
+            // Variables pour les notes
+            currentNotesTab: 'all',
+            currentEditingNoteId: null,
+            notesFilters: {
+                search: '',
+                recipient: '',
+                period: '',
+                sortBy: 'date-desc',
+                dateFrom: '',
+                dateTo: ''
+            }
         };
 
         // État local pour le collapse des clients dans le dashboard périodes
@@ -1734,6 +2128,9 @@
             const inputPassword = document.getElementById('passwordInput').value;
             const errorDiv = document.getElementById('loginError');
             
+            console.log('Mot de passe saisi:', inputPassword); // Debug
+            console.log('Mot de passe attendu:', APP_CONFIG.password); // Debug
+            
             if (inputPassword === APP_CONFIG.password) {
                 const expirationTime = Date.now() + APP_CONFIG.sessionDuration;
                 sessionStorage.setItem('polyservices_auth', expirationTime.toString());
@@ -1743,7 +2140,7 @@
                     loadFromFirestore();
                 }, 100);
             } else {
-                errorDiv.textContent = 'Mot de passe incorrect';
+                errorDiv.textContent = 'Mot de passe incorrect. Utilisez: admin123';
                 errorDiv.style.display = 'block';
                 document.getElementById('passwordInput').value = '';
                 document.getElementById('passwordInput').focus();
@@ -1834,6 +2231,7 @@
             updateClientSelect();
             updateTable();
             updateTodoBadge();
+            updateNotesBadge();
             checkAndShowAlerts();
         }
 
@@ -1889,6 +2287,11 @@
                     { id: 1, text: 'Appeler client urgent', priority: 'high', isFavorite: false, dueDate: '2025-06-10', status: 'active', archivedDate: null, order: 1 },
                     { id: 2, text: 'Préparer devis XYZ', priority: 'medium', isFavorite: false, dueDate: '2025-06-15', status: 'active', archivedDate: null, order: 2 },
                     { id: 3, text: 'Idée nouveau service', priority: 'low', isFavorite: false, dueDate: null, status: 'active', archivedDate: null, order: 3 }
+                ],
+                notes: [
+                    { id: 1, date: '2025-06-20', text: 'Réunion avec le responsable maintenance\nPoints abordés :\n- Planning préventif\n- Budget équipements\n- Formation équipes', recipient: 'M. Dupont', actionType: 'execution', createdAt: '2025-06-20T10:30:00Z', updatedAt: '2025-06-20T10:30:00Z' },
+                    { id: 2, date: '2025-06-22', text: 'Rapport qualité mensuel transmis\nTous les indicateurs sont au vert', recipient: 'Direction', actionType: 'information', createdAt: '2025-06-22T14:15:00Z', updatedAt: '2025-06-22T14:15:00Z' },
+                    { id: 3, date: '2025-06-25', text: 'Nouvelle procédure de sécurité à valider', recipient: 'Service RH', actionType: 'execution', createdAt: '2025-06-25T09:00:00Z', updatedAt: '2025-06-25T09:00:00Z' }
                 ]
             };
 
@@ -1938,12 +2341,17 @@
                 todos: [
                     { id: 21, text: 'Envoyer facture mensuelle', priority: 'high', isFavorite: false, dueDate: '2025-06-09', status: 'active', archivedDate: null, order: 1 },
                     { id: 22, text: 'Visite technique planifiée', priority: 'medium', isFavorite: false, dueDate: '2025-06-12', status: 'active', archivedDate: null, order: 2 }
+                ],
+                notes: [
+                    { id: 21, date: '2025-06-18', text: 'Formation du personnel de nettoyage effectuée\nNouvelles techniques et produits présentés', recipient: 'Chef d\'équipe', actionType: 'information', createdAt: '2025-06-18T11:00:00Z', updatedAt: '2025-06-18T11:00:00Z' },
+                    { id: 22, date: '2025-06-24', text: 'Problème détecté sur système de désinfection\nIntervention technique requise rapidement', recipient: 'Service technique', actionType: 'execution', createdAt: '2025-06-24T16:45:00Z', updatedAt: '2025-06-24T16:45:00Z' }
                 ]
             };
             
             updateClientSelect();
             updateTable();
             updateTodoBadge();
+            updateNotesBadge();
             checkAndShowAlerts();
         }
 
@@ -2000,6 +2408,31 @@
             }
         }
 
+        function openClientModal() {
+            document.getElementById('clientModal').style.display = 'block';
+            appData.currentClientTab = 'active';
+            switchClientTab('active');
+            updateClientTabs();
+            updateClientList();
+        }
+
+        function addClient() {
+            const name = document.getElementById('clientName').value.trim();
+            if (name) {
+                const newClient = { 
+                    id: Date.now(), 
+                    name: name,
+                    status: 'active'
+                };
+                appData.clients.push(newClient);
+                document.getElementById('clientName').value = '';
+                updateClientSelect();
+                updateClientList();
+                updateClientTabs();
+                saveToFirestore();
+            }
+        }
+
         function deleteClient(id) {
             if (!canDeleteClient(id)) {
                 alert('Impossible de supprimer ce client car il contient des données (dates, tâches, opérations...).\n\nVous pouvez l\'archiver pour le retirer de la liste principale tout en conservant ses données.');
@@ -2020,33 +2453,9 @@
                     document.getElementById('clientSelect').value = '';
                     updateTable();
                     updateTodoBadge();
+                    updateNotesBadge();
                 }
                 
-                updateClientSelect();
-                updateClientList();
-                updateClientTabs();
-                saveToFirestore();
-            }
-        }
-
-        function openClientModal() {
-            document.getElementById('clientModal').style.display = 'block';
-            appData.currentClientTab = 'active'; // Réinitialiser sur l'onglet actifs
-            switchClientTab('active');
-            updateClientTabs();
-            updateClientList();
-        }
-
-        function addClient() {
-            const name = document.getElementById('clientName').value.trim();
-            if (name) {
-                const newClient = { 
-                    id: Date.now(), 
-                    name: name,
-                    status: 'active'
-                };
-                appData.clients.push(newClient);
-                document.getElementById('clientName').value = '';
                 updateClientSelect();
                 updateClientList();
                 updateClientTabs();
@@ -2156,8 +2565,9 @@
             const hasOperations = clientData.operations && clientData.operations.length > 0;
             const hasTodos = clientData.todos && clientData.todos.length > 0;
             const hasTasks = clientData.tasks && Object.keys(clientData.tasks).length > 0;
+            const hasNotes = clientData.notes && clientData.notes.length > 0;
             
-            return !(hasDates || hasFamilies || hasOperations || hasTodos || hasTasks);
+            return !(hasDates || hasFamilies || hasOperations || hasTodos || hasTasks || hasNotes);
         }
 
         function archiveClient(clientId) {
@@ -2172,6 +2582,7 @@
                         document.getElementById('clientSelect').value = '';
                         updateTable();
                         updateTodoBadge();
+                        updateNotesBadge();
                     }
                     
                     updateClientSelect();
@@ -2768,7 +3179,8 @@
                     operations: [],
                     tasks: {},
                     dates: [],
-                    todos: []
+                    todos: [],
+                    notes: []
                 };
             }
 
@@ -3047,6 +3459,7 @@
             
             updateTodoModal();
             updateTodoBadge();
+            updateNotesBadge();
             updateClientSelect();
             saveToFirestore();
         }
@@ -3180,6 +3593,7 @@
                 todo.isFavorite = !todo.isFavorite;
                 updateTodoModal();
                 updateTodoBadge();
+                updateNotesBadge();
                 updateClientSelect();
                 saveToFirestore();
             }
@@ -3193,6 +3607,7 @@
                 todo.archivedDate = new Date().toISOString().split('T')[0];
                 updateTodoModal();
                 updateTodoBadge();
+                updateNotesBadge();
                 updateClientSelect();
                 saveToFirestore();
             }
@@ -3206,6 +3621,7 @@
                 todo.archivedDate = null;
                 updateTodoModal();
                 updateTodoBadge();
+                updateNotesBadge();
                 updateClientSelect();
                 saveToFirestore();
             }
@@ -3240,6 +3656,7 @@
                 
                 updateTodoModal();
                 updateTodoBadge();
+                updateNotesBadge();
                 updateClientSelect();
                 closeModal('editTodoModal');
                 saveToFirestore();
@@ -3253,6 +3670,7 @@
                 clientData.todos = clientData.todos.filter(t => t.id !== todoId);
                 updateTodoModal();
                 updateTodoBadge();
+                updateNotesBadge();
                 updateClientSelect();
                 saveToFirestore();
             }
@@ -3590,6 +4008,466 @@
             closeModal('alertsModal');
             saveToFirestore();
         }
+
+        // ============ FIN TODO LIST ============
+
+        // ============ GESTION NOTES ============
+
+        function getClientNotes() {
+            if (!appData.currentClient) return [];
+            const clientData = getClientData();
+            if (!clientData.notes) clientData.notes = [];
+            return clientData.notes;
+        }
+
+        function updateNotesBadge() {
+            const notes = getClientNotes();
+            const recentNotes = notes.filter(note => {
+                const noteDate = new Date(note.date);
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                return noteDate >= weekAgo;
+            });
+            
+            const badge = document.getElementById('notesBadge');
+            if (recentNotes.length > 0) {
+                badge.textContent = recentNotes.length;
+                badge.style.display = 'flex';
+                badge.className = 'alert-badge none'; // Couleur violette pour les notes
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function openNotesModal() {
+            // Synchroniser avec la sélection de client principal
+            const clientSelect = document.getElementById('clientSelect');
+            appData.currentClient = clientSelect.value || null;
+            
+            document.getElementById('notesModal').style.display = 'block';
+            
+            // Réinitialiser à l'onglet "Toutes les notes"
+            appData.currentNotesTab = 'all';
+            
+            // Réinitialiser les filtres
+            appData.notesFilters = {
+                search: '',
+                recipient: '',
+                period: '',
+                sortBy: 'date-desc',
+                dateFrom: '',
+                dateTo: ''
+            };
+            
+            // Initialiser la date par défaut pour le formulaire
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('noteDate').value = today;
+            document.getElementById('noteActionType').value = 'none';
+            
+            updateNotesModal();
+        }
+
+        function updateNotesModal() {
+            const titleElement = document.getElementById('notesModalTitle');
+            const addForm = document.getElementById('notesAddForm');
+            const statsDiv = document.getElementById('notesStats');
+            const filtersDiv = document.getElementById('notesFilters');
+            
+            if (!appData.currentClient || appData.currentClient === "" || appData.currentClient === null) {
+                titleElement.textContent = '📝 Notes - Sélectionnez un client';
+                addForm.style.display = 'none';
+                statsDiv.style.display = 'none';
+                filtersDiv.style.display = 'none';
+                
+                // Réinitialiser les onglets
+                document.getElementById('tabAllNotes').textContent = '📋 Toutes (0)';
+                document.getElementById('tabExecutionNotes').textContent = '⚡ Exéc (0)';
+                document.getElementById('tabInformationNotes').textContent = '📋 Info (0)';
+                
+                document.getElementById('notesList').innerHTML = `
+                    <div class="notes-empty">
+                        <div style="font-size: 48px; margin-bottom: 20px;">📝</div>
+                        <h3>Gestion des notes par client</h3>
+                        <p>Sélectionnez un client dans le menu déroulant principal<br>pour voir et gérer ses notes.</p>
+                        <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid #8e44ad; margin: 20px auto; max-width: 400px;">
+                            <p style="margin: 0; font-size: 14px; color: #2c3e50;">
+                                💡 <strong>Astuce :</strong> Les notes permettent de tracer toutes vos communications et actions par client !
+                            </p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const client = appData.clients.find(c => c.id == appData.currentClient);
+            titleElement.textContent = `📝 Notes - ${client ? client.name : 'Client'}`;
+            addForm.style.display = 'flex';
+            statsDiv.style.display = 'flex';
+            filtersDiv.style.display = 'flex';
+            
+            updateNotesTabs();
+            updateNotesStats();
+            updateNotesFilters();
+            updateNotesList();
+        }
+
+        function switchNotesTab(tab) {
+            appData.currentNotesTab = tab;
+            
+            document.querySelectorAll('#notesModal .todo-tab').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tab === 'all' ? 'tabAllNotes' : 
+                                 tab === 'execution' ? 'tabExecutionNotes' : 
+                                 'tabInformationNotes').classList.add('active');
+            
+            updateNotesList();
+        }
+
+        function updateNotesTabs() {
+            const notes = getClientNotes();
+            const allNotes = notes.length;
+            const executionNotes = notes.filter(n => n.actionType === 'execution').length;
+            const informationNotes = notes.filter(n => n.actionType === 'information').length;
+            
+            document.getElementById('tabAllNotes').textContent = `📋 Toutes (${allNotes})`;
+            document.getElementById('tabExecutionNotes').textContent = `⚡ Exéc (${executionNotes})`;
+            document.getElementById('tabInformationNotes').textContent = `📋 Info (${informationNotes})`;
+        }
+
+        function updateNotesStats() {
+            const notes = getClientNotes();
+            const total = notes.length;
+            const execution = notes.filter(n => n.actionType === 'execution').length;
+            const information = notes.filter(n => n.actionType === 'information').length;
+            const none = notes.filter(n => n.actionType === 'none').length;
+            
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statExecution').textContent = execution;
+            document.getElementById('statInformation').textContent = information;
+            document.getElementById('statNone').textContent = none;
+        }
+
+        function updateNotesFilters() {
+            const notes = getClientNotes();
+            
+            // Mettre à jour la liste des destinataires
+            const recipients = [...new Set(notes.map(n => n.recipient))].sort();
+            const recipientSelect = document.getElementById('notesFilterRecipient');
+            recipientSelect.innerHTML = '<option value="">Tous</option>';
+            recipients.forEach(recipient => {
+                const option = document.createElement('option');
+                option.value = recipient;
+                option.textContent = recipient;
+                recipientSelect.appendChild(option);
+            });
+            
+            // Mettre à jour les suggestions de destinataires pour le formulaire
+            updateRecipientSuggestions();
+            
+            // Attacher les événements de filtrage
+            document.getElementById('notesSearch').oninput = updateNotesList;
+            document.getElementById('notesSortBy').onchange = updateNotesList;
+            document.getElementById('notesFilterRecipient').onchange = updateNotesList;
+            document.getElementById('notesFilterPeriod').onchange = function() {
+                const customPeriod = document.getElementById('notesCustomPeriod');
+                customPeriod.style.display = this.value === 'custom' ? 'flex' : 'none';
+                updateNotesList();
+            };
+        }
+
+        function updateRecipientSuggestions() {
+            const notes = getClientNotes();
+            const recipients = [...new Set(notes.map(n => n.recipient))].sort();
+            
+            // Pour le formulaire d'ajout
+            const datalist = document.getElementById('recipientSuggestions');
+            datalist.innerHTML = '';
+            recipients.forEach(recipient => {
+                const option = document.createElement('option');
+                option.value = recipient;
+                datalist.appendChild(option);
+            });
+            
+            // Pour le formulaire d'édition
+            const editDatalist = document.getElementById('editRecipientSuggestions');
+            editDatalist.innerHTML = '';
+            recipients.forEach(recipient => {
+                const option = document.createElement('option');
+                option.value = recipient;
+                editDatalist.appendChild(option);
+            });
+        }
+
+        function applyCustomPeriod() {
+            updateNotesList();
+        }
+
+        function updateNotesList() {
+            const notesList = document.getElementById('notesList');
+            let notes = getClientNotes();
+            
+            if (notes.length === 0) {
+                notesList.innerHTML = '<div class="notes-empty" style="padding: 20px; text-align: center; color: #666;"><p>Aucune note pour ce client</p></div>';
+                return;
+            }
+            
+            // Filtrer par onglet actif
+            if (appData.currentNotesTab === 'execution') {
+                notes = notes.filter(note => note.actionType === 'execution');
+            } else if (appData.currentNotesTab === 'information') {
+                notes = notes.filter(note => note.actionType === 'information');
+            }
+            
+            // Appliquer les filtres
+            notes = applyNotesFilters(notes);
+            
+            if (notes.length === 0) {
+                let message = 'Aucune note correspondant aux filtres';
+                if (appData.currentNotesTab === 'execution') {
+                    message = 'Aucune note "Pour exécution"';
+                } else if (appData.currentNotesTab === 'information') {
+                    message = 'Aucune note "Pour information"';
+                }
+                notesList.innerHTML = `<div class="notes-empty" style="padding: 20px; text-align: center; color: #666;"><p>${message}</p></div>`;
+                return;
+            }
+            
+            // Trier les notes
+            notes = sortNotes(notes);
+            
+            // S'assurer que le conteneur a les bonnes propriétés de défilement
+            notesList.style.height = 'calc(80vh - 150px)';
+            notesList.style.overflowY = 'scroll';
+            notesList.style.border = '1px solid #ddd';
+            notesList.style.borderRadius = '6px';
+            notesList.style.background = 'white';
+            notesList.style.padding = '8px';
+            
+            notesList.innerHTML = '';
+            notes.forEach((note, index) => {
+                const noteElement = createNoteElement(note);
+                notesList.appendChild(noteElement);
+            });
+        }
+
+        function applyNotesFilters(notes) {
+            let filteredNotes = [...notes];
+            
+            // Filtre par recherche
+            const searchTerm = document.getElementById('notesSearch').value.toLowerCase();
+            if (searchTerm) {
+                filteredNotes = filteredNotes.filter(note => 
+                    note.text.toLowerCase().includes(searchTerm) ||
+                    note.recipient.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Filtre par destinataire
+            const recipientFilter = document.getElementById('notesFilterRecipient').value;
+            if (recipientFilter) {
+                filteredNotes = filteredNotes.filter(note => note.recipient === recipientFilter);
+            }
+            
+            // Filtre par période
+            const periodFilter = document.getElementById('notesFilterPeriod').value;
+            if (periodFilter) {
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                
+                switch (periodFilter) {
+                    case 'today':
+                        filteredNotes = filteredNotes.filter(note => note.date === todayStr);
+                        break;
+                    case 'week':
+                        const weekAgo = new Date();
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        filteredNotes = filteredNotes.filter(note => new Date(note.date) >= weekAgo);
+                        break;
+                    case 'month':
+                        const monthAgo = new Date();
+                        monthAgo.setMonth(monthAgo.getMonth() - 1);
+                        filteredNotes = filteredNotes.filter(note => new Date(note.date) >= monthAgo);
+                        break;
+                    case 'custom':
+                        const dateFrom = document.getElementById('notesDateFrom').value;
+                        const dateTo = document.getElementById('notesDateTo').value;
+                        if (dateFrom) {
+                            filteredNotes = filteredNotes.filter(note => note.date >= dateFrom);
+                        }
+                        if (dateTo) {
+                            filteredNotes = filteredNotes.filter(note => note.date <= dateTo);
+                        }
+                        break;
+                }
+            }
+            
+            return filteredNotes;
+        }
+
+        function sortNotes(notes) {
+            const sortBy = document.getElementById('notesSortBy').value;
+            
+            return notes.sort((a, b) => {
+                switch (sortBy) {
+                    case 'date-desc':
+                        return new Date(b.date) - new Date(a.date);
+                    case 'date-asc':
+                        return new Date(a.date) - new Date(b.date);
+                    case 'recipient-asc':
+                        return a.recipient.localeCompare(b.recipient);
+                    case 'recipient-desc':
+                        return b.recipient.localeCompare(a.recipient);
+                    default:
+                        return 0;
+                }
+            });
+        }
+
+        function createNoteElement(note) {
+            const div = document.createElement('div');
+            div.className = 'note-card';
+            div.dataset.noteId = note.id;
+            
+            const noteDate = new Date(note.date);
+            const formattedDate = noteDate.toLocaleDateString('fr-FR');
+            
+            let actionTypeClass = note.actionType;
+            let actionTypeText = '';
+            switch (note.actionType) {
+                case 'execution':
+                    actionTypeText = '⚡ Pour exécution';
+                    break;
+                case 'information':
+                    actionTypeText = '📋 Pour information';
+                    break;
+                default:
+                    actionTypeText = '📝 Note générale';
+                    actionTypeClass = 'none';
+            }
+            
+            div.innerHTML = `
+                <div class="note-header">
+                    <div class="note-meta">
+                        <span class="note-date">📅 ${formattedDate}</span>
+                        <span class="note-recipient">👤 ${note.recipient}</span>
+                        <span class="note-action-type ${actionTypeClass}">${actionTypeText}</span>
+                    </div>
+                </div>
+                <div class="note-content">${note.text}</div>
+                <div class="note-actions">
+                    <button class="btn-mini btn-edit" onclick="editNote(${note.id})" title="Modifier">✏️</button>
+                    <button class="btn-mini btn-delete" onclick="deleteNote(${note.id})" title="Supprimer">🗑️</button>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function addNote() {
+            const date = document.getElementById('noteDate').value;
+            const recipient = document.getElementById('noteRecipient').value.trim() || 'Note interne';
+            const actionType = document.getElementById('noteActionType').value;
+            const content = document.getElementById('noteContent').value.trim();
+            
+            if (!date) {
+                alert('Veuillez sélectionner une date');
+                return;
+            }
+            
+            if (!content) {
+                alert('Veuillez saisir le contenu de la note');
+                return;
+            }
+            
+            if (!appData.currentClient) {
+                alert('Veuillez sélectionner un client avant d\'ajouter une note');
+                return;
+            }
+            
+            const clientData = getClientData();
+            const now = new Date().toISOString();
+            
+            const newNote = {
+                id: Date.now(),
+                date: date,
+                text: content,
+                recipient: recipient,
+                actionType: actionType,
+                createdAt: now,
+                updatedAt: now
+            };
+            
+            clientData.notes.push(newNote);
+            clearNoteForm();
+            updateNotesModal();
+            updateNotesBadge();
+            saveToFirestore();
+        }
+
+        function clearNoteForm() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('noteDate').value = today;
+            document.getElementById('noteRecipient').value = '';
+            document.getElementById('noteRecipient').placeholder = 'Laissez vide pour une note interne';
+            document.getElementById('noteActionType').value = 'none';
+            document.getElementById('noteContent').value = '';
+        }
+
+        function editNote(noteId) {
+            const notes = getClientNotes();
+            const note = notes.find(n => n.id === noteId);
+            if (note) {
+                appData.currentEditingNoteId = noteId;
+                document.getElementById('editNoteDate').value = note.date;
+                document.getElementById('editNoteRecipient').value = note.recipient;
+                document.getElementById('editNoteActionType').value = note.actionType;
+                document.getElementById('editNoteContent').value = note.text;
+                
+                updateRecipientSuggestions(); // Mettre à jour les suggestions
+                document.getElementById('editNoteModal').style.display = 'block';
+            }
+        }
+
+        function saveEditedNote() {
+            if (!appData.currentEditingNoteId) return;
+            
+            const date = document.getElementById('editNoteDate').value;
+            const recipient = document.getElementById('editNoteRecipient').value.trim() || 'Note interne';
+            const actionType = document.getElementById('editNoteActionType').value;
+            const content = document.getElementById('editNoteContent').value.trim();
+            
+            if (!date || !content) {
+                alert('Veuillez remplir les champs obligatoires (date et contenu)');
+                return;
+            }
+            
+            const notes = getClientNotes();
+            const note = notes.find(n => n.id === appData.currentEditingNoteId);
+            if (note) {
+                note.date = date;
+                note.recipient = recipient;
+                note.actionType = actionType;
+                note.text = content;
+                note.updatedAt = new Date().toISOString();
+                
+                updateNotesModal();
+                updateNotesBadge();
+                closeModal('editNoteModal');
+                saveToFirestore();
+                appData.currentEditingNoteId = null;
+            }
+        }
+
+        function deleteNote(noteId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette note ?')) {
+                const clientData = getClientData();
+                clientData.notes = clientData.notes.filter(n => n.id !== noteId);
+                updateNotesModal();
+                updateNotesBadge();
+                saveToFirestore();
+            }
+        }
+
+        // ============ FIN GESTION NOTES ============
 
         // ============ DASHBOARD PÉRIODES ============
 
@@ -3946,7 +4824,7 @@
         // ============ FIN DASHBOARD PÉRIODES ============
 
         function getClientData() {
-            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [] };
+            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [], notes: [] };
             
             if (!appData.clientData[appData.currentClient]) {
                 appData.clientData[appData.currentClient] = {
@@ -3954,8 +4832,14 @@
                     operations: [],
                     tasks: {},
                     dates: [],
-                    todos: []
+                    todos: [],
+                    notes: []
                 };
+            }
+            
+            // S'assurer que notes existe
+            if (!appData.clientData[appData.currentClient].notes) {
+                appData.clientData[appData.currentClient].notes = [];
             }
             
             return appData.clientData[appData.currentClient];
@@ -4465,12 +5349,16 @@
             if (modalId === 'editTodoModal') {
                 appData.currentEditingTodoId = null;
             }
+            if (modalId === 'editNoteModal') {
+                appData.currentEditingNoteId = null;
+            }
         }
 
         document.getElementById('clientSelect').addEventListener('change', function() {
             appData.currentClient = this.value;
             updateTable(); // Force la mise à jour complète pour attacher les event listeners
             updateTodoBadge();
+            updateNotesBadge();
             updateTodoModal();
         });
 
@@ -4516,6 +5404,7 @@
         setInterval(() => {
             if (isAuthenticated()) {
                 updateTodoBadge();
+                updateNotesBadge();
                 updateClientSelect();
             }
         }, 300000);
