@@ -2347,6 +2347,47 @@
         </div>
     </div>
 
+    <!-- Modal d'édition de note -->
+    <div id="editNoteModal" class="modal">
+        <div class="modal-content edit-todo-modal">
+            <div class="modal-header">
+                <h3>Modifier la note</h3>
+                <span class="close" onclick="closeModal('editNoteModal')">&times;</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="editNoteDate">Date :</label>
+                    <input type="date" id="editNoteDate">
+                </div>
+                <div class="form-group">
+                    <label for="editNoteActionType">Type :</label>
+                    <select id="editNoteActionType">
+                        <option value="none">📝 Générale</option>
+                        <option value="information">📋 Information</option>
+                        <option value="execution">⚡ Exécution</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="editNoteRecipient">Destinataire (optionnel) :</label>
+                <input type="text" id="editNoteRecipient" placeholder="Laissez vide pour note interne" list="editRecipientSuggestions">
+                <datalist id="editRecipientSuggestions"></datalist>
+            </div>
+            
+            <div class="form-group">
+                <label for="editNoteContent">Contenu :</label>
+                <textarea id="editNoteContent" placeholder="Contenu de la note..." style="height: 120px; resize: vertical; line-height: 1.4;"></textarea>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button class="btn btn-success" onclick="saveEditedNote()">Sauvegarder</button>
+                <button class="btn" onclick="closeModal('editNoteModal')" style="margin-left: 10px;">Annuler</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Kilomètres -->
     <div id="kilometersModal" class="modal">
         <div class="modal-content" style="margin: 3% auto; width: 95%; max-width: 1400px; max-height: 90vh; overflow-y: auto;">
@@ -4937,7 +4978,11 @@
             const statsDiv = document.getElementById('notesStats');
             const filtersDiv = document.getElementById('notesFilters');
             
-            if (!appData.currentClient || appData.currentClient === "" || appData.currentClient === null) {
+            // Récupérer le client sélectionné depuis le menu principal
+            const clientSelect = document.getElementById('clientSelect');
+            const selectedClientId = clientSelect.value;
+            
+            if (!selectedClientId || selectedClientId === "" || selectedClientId === null) {
                 titleElement.textContent = '📝 Notes - Sélectionnez un client';
                 addForm.style.display = 'none';
                 statsDiv.style.display = 'none';
@@ -4963,7 +5008,10 @@
                 return;
             }
 
-            const client = appData.clients.find(c => c.id == appData.currentClient);
+            // S'assurer que appData.currentClient est synchronisé
+            appData.currentClient = selectedClientId;
+            
+            const client = appData.clients.find(c => c.id == selectedClientId);
             titleElement.textContent = `📝 Notes - ${client ? client.name : 'Client'}`;
             addForm.style.display = 'flex';
             statsDiv.style.display = 'flex';
@@ -5263,6 +5311,7 @@
             clientData.notes.push(newNote);
             clearNoteForm();
             updateNotesModal();
+            updateNotesList();
             updateNotesBadge();
             saveToFirestore();
         }
@@ -5321,11 +5370,43 @@
             }
         }
 
+        function saveEditedNote() {
+            if (!appData.currentEditingNoteId) return;
+            
+            const date = document.getElementById('editNoteDate').value;
+            const recipient = document.getElementById('editNoteRecipient').value.trim() || 'Note interne';
+            const actionType = document.getElementById('editNoteActionType').value;
+            const content = document.getElementById('editNoteContent').value.trim();
+            
+            if (!date || !content) {
+                alert('Veuillez remplir les champs obligatoires (date et contenu)');
+                return;
+            }
+            
+            const notes = getClientNotes();
+            const note = notes.find(n => n.id === appData.currentEditingNoteId);
+            if (note) {
+                note.date = date;
+                note.recipient = recipient;
+                note.actionType = actionType;
+                note.text = content;
+                note.updatedAt = new Date().toISOString();
+                
+                updateNotesModal();
+                updateNotesList();
+                updateNotesBadge();
+                closeModal('editNoteModal');
+                saveToFirestore();
+                appData.currentEditingNoteId = null;
+            }
+        }
+
         function deleteNote(noteId) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cette note ?')) {
                 const clientData = getClientData();
                 clientData.notes = clientData.notes.filter(n => n.id !== noteId);
                 updateNotesModal();
+                updateNotesList();
                 updateNotesBadge();
                 saveToFirestore();
             }
