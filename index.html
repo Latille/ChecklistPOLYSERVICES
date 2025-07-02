@@ -1578,6 +1578,9 @@
                     📝 Notes
                     <span id="notesBadge" class="alert-badge" style="display: none;">0</span>
                 </button>
+                <button class="btn" onclick="openKilometersModal()" id="kilometersBtn" style="background: #e67e22;">
+                    🚗 Kilomètres
+                </button>
             </div>
 
             <div class="checklist-container">
@@ -2344,43 +2347,179 @@
         </div>
     </div>
 
-    <!-- Modal d'édition de note -->
-    <div id="editNoteModal" class="modal">
-        <div class="modal-content edit-todo-modal">
+    <!-- Modal Kilomètres -->
+    <div id="kilometersModal" class="modal">
+        <div class="modal-content" style="margin: 3% auto; width: 95%; max-width: 1400px; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
-                <h3>Modifier la note</h3>
-                <span class="close" onclick="closeModal('editNoteModal')">&times;</span>
+                <h3 id="kilometersModalTitle">🚗 Gestion des Kilomètres Professionnels</h3>
+                <span class="close" onclick="closeModal('kilometersModal')">&times;</span>
+            </div>
+            
+            <!-- Saisie rapide -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0; color: #2c3e50;">📝 Saisie rapide</h4>
+                <div style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+                    <div style="flex: 0 0 150px;">
+                        <label for="kmDate" style="display: block; font-weight: 600; margin-bottom: 5px;">Date :</label>
+                        <input type="date" id="kmDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label for="kmClient" style="display: block; font-weight: 600; margin-bottom: 5px;">Client :</label>
+                        <select id="kmClient" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                            <option value="">Sélectionner un client</option>
+                        </select>
+                    </div>
+                    <div style="flex: 0 0 120px;">
+                        <label for="kmDistance" style="display: block; font-weight: 600; margin-bottom: 5px;">Distance (km) :</label>
+                        <input type="number" id="kmDistance" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;" readonly>
+                    </div>
+                    <div style="flex: 0 0 100px;">
+                        <button class="btn btn-success" onclick="addKilometer()" style="width: 100%; padding: 8px;">➕ Ajouter</button>
+                    </div>
+                </div>
+                <div id="kmClientDistance" style="margin-top: 8px; font-size: 14px; color: #666; font-style: italic;"></div>
+            </div>
+
+            <!-- Filtres -->
+            <div style="background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef;">
+                <h4 style="margin: 0 0 10px 0; color: #2c3e50;">🔍 Filtres</h4>
+                <div style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+                    <div style="flex: 0 0 120px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Du :</label>
+                        <input type="date" id="kmFilterFrom" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div style="flex: 0 0 120px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Au :</label>
+                        <input type="date" id="kmFilterTo" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Clients :</label>
+                        <select id="kmFilterClient" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 6px;">
+                            <option value="">Tous les clients</option>
+                        </select>
+                    </div>
+                    <div style="flex: 0 0 100px;">
+                        <button class="btn" onclick="filterKilometers()" style="width: 100%; padding: 6px; background: #3498db;">🔍 Filtrer</button>
+                    </div>
+                    <div style="flex: 0 0 100px;">
+                        <button class="btn" onclick="resetKilometersFilters()" style="width: 100%; padding: 6px; background: #95a5a6;">🔄 Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layout en 2 colonnes -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                
+                <!-- Colonne gauche : Journal des déplacements -->
+                <div>
+                    <div style="background: #fff; border: 1px solid #e9ecef; border-radius: 8px;">
+                        <div style="background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #e9ecef; border-radius: 8px 8px 0 0;">
+                            <h4 style="margin: 0; color: #2c3e50;">📋 Journal des déplacements</h4>
+                            <div id="kmTotalPeriod" style="font-size: 14px; color: #666; margin-top: 5px;">Total période: 0km</div>
+                        </div>
+                        <div id="kmJournal" style="max-height: 400px; overflow-y: auto; padding: 0;">
+                            <div style="text-align: center; padding: 40px; color: #666;">
+                                <div style="font-size: 32px; margin-bottom: 15px;">🚗</div>
+                                <p>Aucun déplacement enregistré</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colonne droite : Analyses -->
+                <div>
+                    <!-- Analyse par client -->
+                    <div style="background: #fff; border: 1px solid #e9ecef; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #e9ecef; border-radius: 8px 8px 0 0;">
+                            <h4 style="margin: 0; color: #2c3e50;">👤 Analyse par client</h4>
+                        </div>
+                        <div id="kmAnalyseClient" style="padding: 15px; max-height: 200px; overflow-y: auto;">
+                            <p style="text-align: center; color: #666; margin: 20px 0;">Aucune donnée</p>
+                        </div>
+                    </div>
+
+                    <!-- Analyse par mois -->
+                    <div style="background: #fff; border: 1px solid #e9ecef; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #e9ecef; border-radius: 8px 8px 0 0;">
+                            <h4 style="margin: 0; color: #2c3e50;">📅 Analyse par mois</h4>
+                        </div>
+                        <div id="kmAnalyseMois" style="padding: 15px; max-height: 200px; overflow-y: auto;">
+                            <p style="text-align: center; color: #666; margin: 20px 0;">Aucune donnée</p>
+                        </div>
+                    </div>
+
+                    <!-- Récapitulatifs rapides -->
+                    <div style="background: #fff; border: 1px solid #e9ecef; border-radius: 8px;">
+                        <div style="background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #e9ecef; border-radius: 8px 8px 0 0;">
+                            <h4 style="margin: 0; color: #2c3e50;">📊 Récapitulatifs</h4>
+                        </div>
+                        <div id="kmRecapitulatifs" style="padding: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: center;">
+                                <div style="background: #e8f5e8; padding: 10px; border-radius: 6px;">
+                                    <div style="font-size: 18px; font-weight: bold; color: #27ae60;" id="kmAnnee">0km</div>
+                                    <div style="font-size: 12px; color: #666;">Année 2025</div>
+                                </div>
+                                <div style="background: #e3f2fd; padding: 10px; border-radius: 6px;">
+                                    <div style="font-size: 18px; font-weight: bold; color: #3498db;" id="kmMoisPrecedent">0km</div>
+                                    <div style="font-size: 12px; color: #666;">Mois précédent</div>
+                                </div>
+                                <div style="background: #fff3e0; padding: 10px; border-radius: 6px;">
+                                    <div style="font-size: 18px; font-weight: bold; color: #f39c12;" id="kmSemaine">0km</div>
+                                    <div style="font-size: 12px; color: #666;">Cette semaine</div>
+                                </div>
+                                <div style="background: #fce4ec; padding: 10px; border-radius: 6px;">
+                                    <div style="font-size: 18px; font-weight: bold; color: #e91e63;" id="kmMoyenne">0km</div>
+                                    <div style="font-size: 12px; color: #666;">Moy./déplacement</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+                <div>
+                    <button class="btn" onclick="exportKilometersPDF()" style="background: #e74c3c; margin-right: 10px;">📄 Export PDF</button>
+                    <button class="btn" onclick="exportKilometersExcel()" style="background: #27ae60;">📊 Export Excel</button>
+                </div>
+                <button class="btn btn-outline" onclick="closeModal('kilometersModal')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'édition de déplacement -->
+    <div id="editKmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Modifier le déplacement</h3>
+                <span class="close" onclick="closeModal('editKmModal')">&times;</span>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div class="form-group">
-                    <label for="editNoteDate">Date :</label>
-                    <input type="date" id="editNoteDate">
+                    <label for="editKmDate">Date :</label>
+                    <input type="date" id="editKmDate">
                 </div>
                 <div class="form-group">
-                    <label for="editNoteActionType">Type d'action :</label>
-                    <select id="editNoteActionType">
-                        <option value="none">📝 Aucune action spécifique</option>
-                        <option value="information">📋 Pour information</option>
-                        <option value="execution">⚡ Pour exécution</option>
+                    <label for="editKmClient">Client :</label>
+                    <select id="editKmClient">
+                        <option value="">Sélectionner un client</option>
                     </select>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="editNoteRecipient">Destinataire (optionnel) :</label>
-                <input type="text" id="editNoteRecipient" placeholder="Nom du destinataire (laissez vide pour note interne)" list="editRecipientSuggestions">
-                <datalist id="editRecipientSuggestions"></datalist>
-            </div>
-            
-            <div class="form-group">
-                <label for="editNoteContent">Contenu :</label>
-                <textarea id="editNoteContent" placeholder="Contenu de la note" style="height: 100px; resize: vertical; line-height: 1.4;"></textarea>
+                <label for="editKmDistance">Distance (km) :</label>
+                <input type="number" id="editKmDistance" step="0.1" placeholder="Distance en kilomètres">
+                <small style="color: #666; font-style: italic; display: block; margin-top: 5px;">
+                    La distance sera automatiquement mise à jour selon le client sélectionné
+                </small>
             </div>
             
             <div style="margin-top: 20px;">
-                <button class="btn btn-success" onclick="saveEditedNote()">Sauvegarder</button>
-                <button class="btn" onclick="closeModal('editNoteModal')" style="margin-left: 10px;">Annuler</button>
+                <button class="btn btn-success" onclick="saveEditedKm()">Sauvegarder</button>
+                <button class="btn" onclick="closeModal('editKmModal')" style="margin-left: 10px;">Annuler</button>
             </div>
         </div>
     </div>
@@ -2496,7 +2635,21 @@
         }
 
         function loadClientDetailsData(clientId) {
-            const clientData = getClientData();
+           // Utiliser les données du client spécifique, pas celui sélectionné dans le menu principal
+            let clientData = appData.clientData[clientId];
+            if (!clientData) {
+                clientData = appData.clientData[clientId] = {
+                    families: [],
+                    operations: [],
+                    tasks: {},
+                    dates: [],
+                    todos: [],
+                    notes: [],
+                    clientDetails: {},
+                    kilometers: []
+                };
+            }
+            
             const details = clientData.clientDetails || {};
             
             // Onglet Informations légales
@@ -2523,7 +2676,21 @@
         function saveClientDetails() {
             if (!appData.currentEditingClientDetailsId) return;
             
-            const clientData = getClientData();
+            // Utiliser les données du client qu'on édite, pas celui sélectionné dans le menu principal
+            let clientData = appData.clientData[appData.currentEditingClientDetailsId];
+            if (!clientData) {
+                clientData = appData.clientData[appData.currentEditingClientDetailsId] = {
+                    families: [],
+                    operations: [],
+                    tasks: {},
+                    dates: [],
+                    todos: [],
+                    notes: [],
+                    clientDetails: {},
+                    kilometers: []
+                };
+            }
+            
             if (!clientData.clientDetails) {
                 clientData.clientDetails = {};
             }
@@ -2733,6 +2900,11 @@
                     { id: 2, date: '2025-06-22', text: 'Rapport qualité mensuel transmis\nTous les indicateurs sont au vert', recipient: 'Direction', actionType: 'information', createdAt: '2025-06-22T14:15:00Z', updatedAt: '2025-06-22T14:15:00Z' },
                     { id: 3, date: '2025-06-25', text: 'Nouvelle procédure de sécurité à valider', recipient: 'Service RH', actionType: 'execution', createdAt: '2025-06-25T09:00:00Z', updatedAt: '2025-06-25T09:00:00Z' }
                 ],
+                kilometers: [
+                    { id: 1001, date: '2025-06-15', clientId: 1, clientName: 'Client A', distance: 25.5, createdAt: '2025-06-15T08:00:00Z' },
+                    { id: 1002, date: '2025-06-20', clientId: 1, clientName: 'Client A', distance: 25.5, createdAt: '2025-06-20T09:00:00Z' },
+                    { id: 1003, date: '2025-06-25', clientId: 1, clientName: 'Client A', distance: 25.5, createdAt: '2025-06-25T10:00:00Z' }
+                ],
                 clientDetails: {
                     companyType: 'SARL',
                     vatType: 'Débits',
@@ -2801,6 +2973,12 @@
                 notes: [
                     { id: 21, date: '2025-06-18', text: 'Formation du personnel de nettoyage effectuée\nNouvelles techniques et produits présentés', recipient: 'Chef d\'équipe', actionType: 'information', createdAt: '2025-06-18T11:00:00Z', updatedAt: '2025-06-18T11:00:00Z' },
                     { id: 22, date: '2025-06-24', text: 'Problème détecté sur système de désinfection\nIntervention technique requise rapidement', recipient: 'Service technique', actionType: 'execution', createdAt: '2025-06-24T16:45:00Z', updatedAt: '2025-06-24T16:45:00Z' }
+                ],
+                kilometers: [
+                    { id: 2001, date: '2025-05-10', clientId: 2, clientName: 'Client B', distance: 45, createdAt: '2025-05-10T08:30:00Z' },
+                    { id: 2002, date: '2025-05-25', clientId: 2, clientName: 'Client B', distance: 45, createdAt: '2025-05-25T14:00:00Z' },
+                    { id: 2003, date: '2025-06-10', clientId: 2, clientName: 'Client B', distance: 45, createdAt: '2025-06-10T09:15:00Z' },
+                    { id: 2004, date: '2025-06-15', clientId: 2, clientName: 'Client B', distance: 45, createdAt: '2025-06-15T16:30:00Z' }
                 ],
                 clientDetails: {
                     companyType: 'SAS',
@@ -3265,7 +3443,7 @@
         // Pour économiser l'espace, je vais juste ajouter la partie manquante essentielle pour compléter le script
         
         function getClientData() {
-            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [], notes: [], clientDetails: {} };
+            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [], notes: [], clientDetails: {}, kilometers: [] };
             
             if (!appData.clientData[appData.currentClient]) {
                 appData.clientData[appData.currentClient] = {
@@ -3275,7 +3453,8 @@
                     dates: [],
                     todos: [],
                     notes: [],
-                    clientDetails: {}
+                    clientDetails: {},
+                    kilometers: []
                 };
             }
             
@@ -3287,6 +3466,11 @@
             // S'assurer que clientDetails existe
             if (!appData.clientData[appData.currentClient].clientDetails) {
                 appData.clientData[appData.currentClient].clientDetails = {};
+            }
+            
+            // S'assurer que kilometers existe
+            if (!appData.clientData[appData.currentClient].kilometers) {
+                appData.clientData[appData.currentClient].kilometers = [];
             }
             
             return appData.clientData[appData.currentClient];
@@ -3316,6 +3500,9 @@
             }
             if (modalId === 'editNoteModal') {
                 appData.currentEditingNoteId = null;
+            }
+            if (modalId === 'editKmModal') {
+                currentEditingKmId = null;
             }
         }
 
@@ -5771,11 +5958,736 @@
             openTodoModal();
         }
 
-        function dismissAlertsForToday() {
+        // ============ GESTION KILOMÈTRES ============
+
+        function getClientKilometers() {
+            if (!appData.currentClient) return [];
+            const clientData = getClientData();
+            if (!clientData.kilometers) clientData.kilometers = [];
+            return clientData.kilometers;
+        }
+
+        function getAllKilometers() {
+            let allKilometers = [];
+            for (let clientId in appData.clientData) {
+                const clientData = appData.clientData[clientId];
+                if (clientData.kilometers) {
+                    const clientKms = clientData.kilometers.map(km => ({
+                        ...km,
+                        clientId: parseInt(clientId),
+                        clientName: appData.clients.find(c => c.id == clientId)?.name || 'Client inconnu'
+                    }));
+                    allKilometers = allKilometers.concat(clientKms);
+                }
+            }
+            return allKilometers.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
+        function openKilometersModal() {
+            document.getElementById('kilometersModal').style.display = 'block';
+            
+            // Initialiser la date du jour
             const today = new Date().toISOString().split('T')[0];
-            appData.alertsDismissedToday = today;
-            closeModal('alertsModal');
+            document.getElementById('kmDate').value = today;
+            
+            // Initialiser les filtres avec l'année en cours
+            const currentYear = new Date().getFullYear();
+            document.getElementById('kmFilterFrom').value = `${currentYear}-01-01`;
+            document.getElementById('kmFilterTo').value = `${currentYear}-12-31`;
+            
+            updateKilometersModal();
+        }
+
+        function updateKilometersModal() {
+            updateKilometersClientSelects();
+            filterKilometers();
+        }
+
+        function updateKilometersClientSelects() {
+            const kmClientSelect = document.getElementById('kmClient');
+            const kmFilterClientSelect = document.getElementById('kmFilterClient');
+            const editKmClientSelect = document.getElementById('editKmClient');
+            
+            // Filtrer pour afficher seulement les clients actifs
+            const activeClients = appData.clients.filter(client => client.status !== 'archived');
+            const sortedClients = [...activeClients].sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Remplir le select de saisie
+            kmClientSelect.innerHTML = '<option value="">Sélectionner un client</option>';
+            sortedClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.name;
+                kmClientSelect.appendChild(option);
+            });
+            
+            // Remplir le select de filtre
+            kmFilterClientSelect.innerHTML = '<option value="">Tous les clients</option>';
+            sortedClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.name;
+                kmFilterClientSelect.appendChild(option);
+            });
+            
+            // Remplir le select d'édition
+            editKmClientSelect.innerHTML = '<option value="">Sélectionner un client</option>';
+            sortedClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.name;
+                editKmClientSelect.appendChild(option);
+            });
+            
+            // Attacher les événements
+            kmClientSelect.addEventListener('change', updateKmDistance);
+            editKmClientSelect.addEventListener('change', updateEditKmDistance);
+        }
+
+        function updateKmDistance() {
+            const clientId = document.getElementById('kmClient').value;
+            const distanceInput = document.getElementById('kmDistance');
+            const infoDiv = document.getElementById('kmClientDistance');
+            
+            if (clientId) {
+                const client = appData.clients.find(c => c.id == clientId);
+                const clientData = appData.clientData[clientId];
+                const distance = clientData?.clientDetails?.distanceKm || '';
+                
+                if (distance) {
+                    distanceInput.value = distance;
+                    infoDiv.textContent = `💡 Distance automatique depuis la fiche de ${client?.name}: ${distance}km`;
+                    infoDiv.style.color = '#27ae60';
+                } else {
+                    distanceInput.value = '';
+                    infoDiv.textContent = `⚠️ Distance non renseignée dans la fiche de ${client?.name}`;
+                    infoDiv.style.color = '#e74c3c';
+                    distanceInput.readOnly = false;
+                    distanceInput.placeholder = 'Saisir la distance manuellement';
+                }
+            } else {
+                distanceInput.value = '';
+                infoDiv.textContent = '';
+                distanceInput.readOnly = true;
+                distanceInput.placeholder = '';
+            }
+        }
+
+        function updateEditKmDistance() {
+            const clientId = document.getElementById('editKmClient').value;
+            const distanceInput = document.getElementById('editKmDistance');
+            
+            if (clientId) {
+                const clientData = appData.clientData[clientId];
+                const distance = clientData?.clientDetails?.distanceKm || '';
+                
+                if (distance) {
+                    distanceInput.value = distance;
+                }
+            }
+        }
+
+        function addKilometer() {
+            const date = document.getElementById('kmDate').value;
+            const clientId = document.getElementById('kmClient').value;
+            const distance = parseFloat(document.getElementById('kmDistance').value);
+            
+            if (!date) {
+                alert('Veuillez sélectionner une date');
+                return;
+            }
+            
+            if (!clientId) {
+                alert('Veuillez sélectionner un client');
+                return;
+            }
+            
+            if (!distance || distance <= 0) {
+                alert('Veuillez saisir une distance valide');
+                return;
+            }
+            
+            // Vérifier les doublons (même date et même client)
+            const allKm = getAllKilometers();
+            const duplicate = allKm.find(km => km.date === date && km.clientId == clientId);
+            if (duplicate) {
+                if (!confirm('Un déplacement existe déjà pour ce client à cette date. Voulez-vous continuer ?')) {
+                    return;
+                }
+            }
+            
+            const clientData = appData.clientData[clientId];
+            if (!clientData.kilometers) clientData.kilometers = [];
+            
+            const client = appData.clients.find(c => c.id == clientId);
+            
+            const newKm = {
+                id: Date.now(),
+                date: date,
+                clientId: parseInt(clientId),
+                clientName: client?.name || 'Client inconnu',
+                distance: distance,
+                createdAt: new Date().toISOString()
+            };
+            
+            clientData.kilometers.push(newKm);
+            
+            // Réinitialiser le formulaire
+            document.getElementById('kmDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('kmClient').value = '';
+            document.getElementById('kmDistance').value = '';
+            document.getElementById('kmClientDistance').textContent = '';
+            
+            updateKilometersModal();
+            updateKilometersAnalyses();
             saveToFirestore();
+        }
+
+        function filterKilometers() {
+            const fromDate = document.getElementById('kmFilterFrom').value;
+            const toDate = document.getElementById('kmFilterTo').value;
+            const clientFilter = document.getElementById('kmFilterClient').value;
+            
+            let allKm = getAllKilometers();
+            
+            // Filtrer par période
+            if (fromDate) {
+                allKm = allKm.filter(km => km.date >= fromDate);
+            }
+            if (toDate) {
+                allKm = allKm.filter(km => km.date <= toDate);
+            }
+            
+            // Filtrer par client
+            if (clientFilter) {
+                allKm = allKm.filter(km => km.clientId == clientFilter);
+            }
+            
+            updateKilometersJournal(allKm);
+            updateKilometersAnalysesByPeriod(allKm, fromDate, toDate);
+            updateKilometersAnalysesWithFilteredData(allKm);
+        }
+
+        function updateKilometersAnalysesWithFilteredData(filteredKm) {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            
+            // Pour "Année 2025" et "Cette semaine" : utiliser toutes les données (éventuellement filtrées par client)
+            const clientFilter = document.getElementById('kmFilterClient').value;
+            let baseKm = getAllKilometers();
+            
+            // Si un client est sélectionné, filtrer par client pour les stats globales
+            if (clientFilter) {
+                baseKm = baseKm.filter(km => km.clientId == clientFilter);
+            }
+            
+            // Année en cours (toujours calculée sur l'année complète, mais filtrée par client si sélectionné)
+            const currentYearStr = String(currentYear);
+            const anneeKm = baseKm.filter(km => {
+                return km.date.startsWith(currentYearStr);
+            }).reduce((sum, km) => sum + km.distance, 0);
+            
+            // Cette semaine (toujours calculée sur la semaine actuelle, mais filtrée par client si sélectionné)
+            const currentDate2 = new Date();
+            const startOfWeek = new Date(currentDate2);
+            startOfWeek.setDate(currentDate2.getDate() - currentDate2.getDay() + 1); // Lundi
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6); // Dimanche
+            
+            const startWeekStr = startOfWeek.toISOString().split('T')[0];
+            const endWeekStr = endOfWeek.toISOString().split('T')[0];
+            
+            const semaineKm = baseKm.filter(km => {
+                return km.date >= startWeekStr && km.date <= endWeekStr;
+            }).reduce((sum, km) => sum + km.distance, 0);
+            
+            // Mois précédent : calculé sur toutes les données (comme "Année 2025"), filtré par client si sélectionné
+            const currentDate = new Date();
+            const lastMonthYear = currentDate.getMonth() === 0 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
+            const lastMonthNumber = currentDate.getMonth() === 0 ? 12 : currentDate.getMonth();
+            const lastMonthStr = `${lastMonthYear}-${String(lastMonthNumber).padStart(2, '0')}`;
+            
+            const moisPrecedentKm = baseKm.filter(km => {
+                return km.date.startsWith(lastMonthStr);
+            }).reduce((sum, km) => sum + km.distance, 0);
+            
+            // Moyenne par déplacement : calculée sur les données filtrées
+            const moyenneKm = filteredKm.length > 0 ? filteredKm.reduce((sum, km) => sum + km.distance, 0) / filteredKm.length : 0;
+            
+            // Mettre à jour l'affichage
+            document.getElementById('kmAnnee').textContent = `${anneeKm.toFixed(1)}km`;
+            document.getElementById('kmMoisPrecedent').textContent = `${moisPrecedentKm.toFixed(1)}km`;
+            document.getElementById('kmSemaine').textContent = `${semaineKm.toFixed(1)}km`;
+            document.getElementById('kmMoyenne').textContent = `${moyenneKm.toFixed(1)}km`;
+        }
+
+        function updateKilometersJournal(kilometers) {
+            const journal = document.getElementById('kmJournal');
+            const totalDiv = document.getElementById('kmTotalPeriod');
+            
+            if (kilometers.length === 0) {
+                journal.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <div style="font-size: 32px; margin-bottom: 15px;">🚗</div>
+                        <p>Aucun déplacement pour cette période</p>
+                    </div>
+                `;
+                totalDiv.textContent = 'Total période: 0km';
+                return;
+            }
+            
+            const totalKm = kilometers.reduce((sum, km) => sum + km.distance, 0);
+            totalDiv.textContent = `Total période: ${totalKm.toFixed(1)}km`;
+            
+            journal.innerHTML = '';
+            
+            // En-tête du tableau
+            const header = document.createElement('div');
+            header.style.cssText = `
+                display: grid; 
+                grid-template-columns: 100px 1fr 80px 80px; 
+                gap: 10px; 
+                padding: 8px 15px; 
+                background: #f8f9fa; 
+                border-bottom: 1px solid #e9ecef; 
+                font-weight: 600; 
+                font-size: 12px; 
+                color: #666;
+            `;
+            header.innerHTML = `
+                <div>📅 Date</div>
+                <div>👤 Client</div>
+                <div>🚗 Distance</div>
+                <div>Actions</div>
+            `;
+            journal.appendChild(header);
+            
+            // Lignes de données
+            kilometers.forEach(km => {
+                const row = document.createElement('div');
+                row.style.cssText = `
+                    display: grid; 
+                    grid-template-columns: 100px 1fr 80px 80px; 
+                    gap: 10px; 
+                    padding: 8px 15px; 
+                    border-bottom: 1px solid #f0f0f0; 
+                    align-items: center;
+                    transition: background 0.2s ease;
+                `;
+                row.onmouseenter = () => row.style.background = '#f8f9fa';
+                row.onmouseleave = () => row.style.background = 'white';
+                
+                const formattedDate = new Date(km.date).toLocaleDateString('fr-FR', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: '2-digit' 
+                });
+                
+                row.innerHTML = `
+                    <div style="font-size: 13px;">${formattedDate}</div>
+                    <div style="font-size: 13px; font-weight: 500;">${km.clientName}</div>
+                    <div style="font-size: 13px; text-align: center; font-weight: 600; color: #3498db;">${km.distance}km</div>
+                    <div style="display: flex; gap: 3px; justify-content: center;">
+                        <button class="btn-mini btn-edit" onclick="editKilometer(${km.id})" title="Modifier">✏️</button>
+                        <button class="btn-mini btn-delete" onclick="deleteKilometer(${km.id})" title="Supprimer">🗑️</button>
+                    </div>
+                `;
+                
+                journal.appendChild(row);
+            });
+        }
+
+        function updateKilometersAnalysesByPeriod(kilometers, fromDate, toDate) {
+            updateKilometersAnalyseClient(kilometers);
+            updateKilometersAnalyseMois(kilometers, fromDate, toDate);
+        }
+
+        function updateKilometersAnalyseClient(kilometers) {
+            const analyseDiv = document.getElementById('kmAnalyseClient');
+            
+            if (kilometers.length === 0) {
+                analyseDiv.innerHTML = '<p style="text-align: center; color: #666; margin: 20px 0;">Aucune donnée</p>';
+                return;
+            }
+            
+            // Grouper par client
+            const clientStats = {};
+            let totalKm = 0;
+            
+            kilometers.forEach(km => {
+                if (!clientStats[km.clientId]) {
+                    clientStats[km.clientId] = {
+                        name: km.clientName,
+                        totalKm: 0,
+                        deplCount: 0,
+                        avgDistance: 0
+                    };
+                }
+                clientStats[km.clientId].totalKm += km.distance;
+                clientStats[km.clientId].deplCount++;
+                totalKm += km.distance;
+            });
+            
+            // Calculer les moyennes et pourcentages
+            Object.values(clientStats).forEach(stat => {
+                stat.avgDistance = stat.totalKm / stat.deplCount;
+                stat.percentage = (stat.totalKm / totalKm) * 100;
+            });
+            
+            // Trier par total de km décroissant
+            const sortedStats = Object.values(clientStats).sort((a, b) => b.totalKm - a.totalKm);
+            
+            analyseDiv.innerHTML = '';
+            
+            sortedStats.forEach(stat => {
+                const row = document.createElement('div');
+                row.style.cssText = `
+                    display: grid; 
+                    grid-template-columns: 1fr 60px 60px 60px 80px; 
+                    gap: 8px; 
+                    padding: 8px 0; 
+                    border-bottom: 1px solid #f0f0f0; 
+                    align-items: center;
+                    font-size: 13px;
+                `;
+                
+                const barWidth = Math.max(10, stat.percentage);
+                
+                row.innerHTML = `
+                    <div style="font-weight: 500; color: #2c3e50;">${stat.name}</div>
+                    <div style="text-align: center; color: #666;">${stat.avgDistance.toFixed(1)}km</div>
+                    <div style="text-align: center; color: #666;">${stat.deplCount} dépl.</div>
+                    <div style="text-align: center; font-weight: 600; color: #3498db;">${stat.totalKm.toFixed(1)}km</div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 40px; height: 6px; background: #e9ecef; border-radius: 3px; position: relative;">
+                            <div style="width: ${barWidth}%; height: 100%; background: #3498db; border-radius: 3px;"></div>
+                        </div>
+                        <span style="font-size: 11px; color: #666;">${stat.percentage.toFixed(0)}%</span>
+                    </div>
+                `;
+                
+                analyseDiv.appendChild(row);
+            });
+            
+            // Statistiques résumées
+            if (sortedStats.length > 0) {
+                const summary = document.createElement('div');
+                summary.style.cssText = `
+                    margin-top: 15px; 
+                    padding: 10px; 
+                    background: #f8f9fa; 
+                    border-radius: 6px; 
+                    font-size: 12px; 
+                    color: #666;
+                `;
+                
+                const clientLePlusEloigne = sortedStats.reduce((max, current) => 
+                    current.avgDistance > max.avgDistance ? current : max
+                );
+                
+                const clientLePlusFrequent = sortedStats.reduce((max, current) => 
+                    current.deplCount > max.deplCount ? current : max
+                );
+                
+                summary.innerHTML = `
+                    <div>🎯 Client le + éloigné: ${clientLePlusEloigne.name} (${clientLePlusEloigne.avgDistance.toFixed(1)}km)</div>
+                    <div style="margin-top: 5px;">📈 Client le + fréquent: ${clientLePlusFrequent.name} (${clientLePlusFrequent.deplCount} déplacements)</div>
+                `;
+                
+                analyseDiv.appendChild(summary);
+            }
+        }
+
+        function updateKilometersAnalyseMois(kilometers, fromDate, toDate) {
+            const analyseDiv = document.getElementById('kmAnalyseMois');
+            
+            if (kilometers.length === 0) {
+                analyseDiv.innerHTML = '<p style="text-align: center; color: #666; margin: 20px 0;">Aucune donnée</p>';
+                return;
+            }
+            
+            // Grouper par mois
+            const monthStats = {};
+            
+            kilometers.forEach(km => {
+                const date = new Date(km.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                const monthName = date.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+                
+                if (!monthStats[monthKey]) {
+                    monthStats[monthKey] = {
+                        name: monthName,
+                        totalKm: 0,
+                        deplCount: 0
+                    };
+                }
+                monthStats[monthKey].totalKm += km.distance;
+                monthStats[monthKey].deplCount++;
+            });
+            
+            // Trier par date
+            const sortedMonths = Object.entries(monthStats)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([key, value]) => value);
+            
+            analyseDiv.innerHTML = '';
+            
+            if (sortedMonths.length === 0) {
+                analyseDiv.innerHTML = '<p style="text-align: center; color: #666; margin: 20px 0;">Aucune donnée</p>';
+                return;
+            }
+            
+            // Créer le graphique en barres
+            const maxKm = Math.max(...sortedMonths.map(m => m.totalKm));
+            
+            sortedMonths.forEach(month => {
+                const row = document.createElement('div');
+                row.style.cssText = `
+                    display: flex; 
+                    align-items: center; 
+                    gap: 10px; 
+                    padding: 5px 0; 
+                    font-size: 13px;
+                `;
+                
+                const barWidth = maxKm > 0 ? (month.totalKm / maxKm) * 100 : 0;
+                
+                row.innerHTML = `
+                    <div style="width: 50px; font-weight: 500; color: #2c3e50;">${month.name}</div>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 100px; height: 8px; background: #e9ecef; border-radius: 4px; position: relative;">
+                            <div style="width: ${barWidth}%; height: 100%; background: #3498db; border-radius: 4px;"></div>
+                        </div>
+                        <span style="font-weight: 600; color: #3498db; min-width: 50px;">${month.totalKm.toFixed(1)}km</span>
+                        <span style="color: #666; font-size: 11px;">(${month.deplCount} dépl.)</span>
+                    </div>
+                `;
+                
+                analyseDiv.appendChild(row);
+            });
+            
+            // Statistiques résumées
+            const totalKm = sortedMonths.reduce((sum, m) => sum + m.totalKm, 0);
+            const avgMonth = totalKm / sortedMonths.length;
+            const bestMonth = sortedMonths.reduce((max, current) => 
+                current.totalKm > max.totalKm ? current : max
+            );
+            
+            const summary = document.createElement('div');
+            summary.style.cssText = `
+                margin-top: 15px; 
+                padding: 10px; 
+                background: #f8f9fa; 
+                border-radius: 6px; 
+                font-size: 12px; 
+                color: #666;
+            `;
+            
+            summary.innerHTML = `
+                <div>📊 Moyenne mensuelle: ${avgMonth.toFixed(1)}km</div>
+                <div style="margin-top: 5px;">🏆 Mois le plus chargé: ${bestMonth.name} (${bestMonth.totalKm.toFixed(1)}km)</div>
+            `;
+            
+            analyseDiv.appendChild(summary);
+        }
+
+        function updateKilometersAnalyses() {
+            const currentYear = new Date().getFullYear();
+            const today = new Date();
+            
+            // Récupérer tous les kilomètres
+            const allKm = getAllKilometers();
+            
+            // Année en cours
+            const anneeKm = allKm.filter(km => {
+                const kmDate = new Date(km.date);
+                return kmDate.getFullYear() === currentYear;
+            }).reduce((sum, km) => sum + km.distance, 0);
+            
+            // Mois précédent
+            const currentDate = new Date();
+            const lastMonthYear = currentDate.getMonth() === 0 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
+            const lastMonthNumber = currentDate.getMonth() === 0 ? 12 : currentDate.getMonth();
+            const lastMonthStr = `${lastMonthYear}-${String(lastMonthNumber).padStart(2, '0')}`;
+
+            const moisPrecedentKm = allKm.filter(km => {
+                return km.date.startsWith(lastMonthStr);
+            }).reduce((sum, km) => sum + km.distance, 0);
+                        
+            // Cette semaine
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Lundi
+            const semaineKm = allKm.filter(km => {
+                const kmDate = new Date(km.date);
+                return kmDate >= startOfWeek && kmDate <= today;
+            }).reduce((sum, km) => sum + km.distance, 0);
+            
+            // Moyenne par déplacement
+            const moyenneKm = allKm.length > 0 ? allKm.reduce((sum, km) => sum + km.distance, 0) / allKm.length : 0;
+            
+            // Mettre à jour l'affichage
+            document.getElementById('kmAnnee').textContent = `${anneeKm.toFixed(1)}km`;
+            document.getElementById('kmMoisPrecedent').textContent = `${moisPrecedentKm.toFixed(1)}km`;
+            document.getElementById('kmSemaine').textContent = `${semaineKm.toFixed(1)}km`;
+            document.getElementById('kmMoyenne').textContent = `${moyenneKm.toFixed(1)}km`;
+        }
+
+        function resetKilometersFilters() {
+            const currentYear = new Date().getFullYear();
+            document.getElementById('kmFilterFrom').value = `${currentYear}-01-01`;
+            document.getElementById('kmFilterTo').value = `${currentYear}-12-31`;
+            document.getElementById('kmFilterClient').value = '';
+            filterKilometers();
+            updateKilometersAnalyses();
+        }
+
+        // Variables pour l'édition
+        let currentEditingKmId = null;
+
+        function editKilometer(kmId) {
+            // Trouver le déplacement dans tous les clients
+            let foundKm = null;
+            let foundClientId = null;
+            
+            for (let clientId in appData.clientData) {
+                const clientData = appData.clientData[clientId];
+                if (clientData.kilometers) {
+                    const km = clientData.kilometers.find(k => k.id === kmId);
+                    if (km) {
+                        foundKm = km;
+                        foundClientId = clientId;
+                        break;
+                    }
+                }
+            }
+            
+            if (foundKm) {
+                currentEditingKmId = kmId;
+                currentEditingKmClientId = foundClientId;
+                
+                document.getElementById('editKmDate').value = foundKm.date;
+                document.getElementById('editKmClient').value = foundKm.clientId;
+                document.getElementById('editKmDistance').value = foundKm.distance;
+                
+                document.getElementById('editKmModal').style.display = 'block';
+            }
+        }
+
+        function saveEditedKm() {
+            if (!currentEditingKmId) return;
+            
+            const date = document.getElementById('editKmDate').value;
+            const newClientId = document.getElementById('editKmClient').value;
+            const distance = parseFloat(document.getElementById('editKmDistance').value);
+            
+            if (!date || !newClientId || !distance || distance <= 0) {
+                alert('Veuillez remplir tous les champs avec des valeurs valides');
+                return;
+            }
+            
+            // Trouver et supprimer l'ancien déplacement
+            let foundKm = null;
+            for (let clientId in appData.clientData) {
+                const clientData = appData.clientData[clientId];
+                if (clientData.kilometers) {
+                    const kmIndex = clientData.kilometers.findIndex(k => k.id === currentEditingKmId);
+                    if (kmIndex !== -1) {
+                        foundKm = clientData.kilometers[kmIndex];
+                        clientData.kilometers.splice(kmIndex, 1);
+                        break;
+                    }
+                }
+            }
+            
+            if (foundKm) {
+                // Mettre à jour les données
+                foundKm.date = date;
+                foundKm.clientId = parseInt(newClientId);
+                foundKm.clientName = appData.clients.find(c => c.id == newClientId)?.name || 'Client inconnu';
+                foundKm.distance = distance;
+                foundKm.updatedAt = new Date().toISOString();
+                
+                // Ajouter dans le bon client
+                const newClientData = appData.clientData[newClientId];
+                if (!newClientData.kilometers) newClientData.kilometers = [];
+                newClientData.kilometers.push(foundKm);
+                
+                updateKilometersModal();
+                updateKilometersAnalyses();
+                closeModal('editKmModal');
+                saveToFirestore();
+                currentEditingKmId = null;
+            }
+        }
+
+        function deleteKilometer(kmId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce déplacement ?')) {
+                // Trouver et supprimer le déplacement
+                for (let clientId in appData.clientData) {
+                    const clientData = appData.clientData[clientId];
+                    if (clientData.kilometers) {
+                        const kmIndex = clientData.kilometers.findIndex(k => k.id === kmId);
+                        if (kmIndex !== -1) {
+                            clientData.kilometers.splice(kmIndex, 1);
+                            updateKilometersModal();
+                            updateKilometersAnalyses();
+                            saveToFirestore();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        function exportKilometersPDF() {
+            alert('Export PDF - Fonctionnalité à venir !\n\nCette fonction générera un rapport PDF avec tous vos déplacements pour les impôts.');
+        }
+
+        function exportKilometersExcel() {
+            const fromDate = document.getElementById('kmFilterFrom').value;
+            const toDate = document.getElementById('kmFilterTo').value;
+            const clientFilter = document.getElementById('kmFilterClient').value;
+            
+            let allKm = getAllKilometers();
+            
+            // Appliquer les mêmes filtres que l'affichage
+            if (fromDate) {
+                allKm = allKm.filter(km => km.date >= fromDate);
+            }
+            if (toDate) {
+                allKm = allKm.filter(km => km.date <= toDate);
+            }
+            if (clientFilter) {
+                allKm = allKm.filter(km => km.clientId == clientFilter);
+            }
+            
+            if (allKm.length === 0) {
+                alert('Aucune donnée à exporter pour cette période');
+                return;
+            }
+            
+            // Créer le contenu CSV
+            let csvContent = "Date,Client,Distance (km)\n";
+            
+            allKm.forEach(km => {
+                const formattedDate = new Date(km.date).toLocaleDateString('fr-FR');
+                csvContent += `"${formattedDate}","${km.clientName}","${km.distance}"\n`;
+            });
+            
+            // Ajouter le total
+            const totalKm = allKm.reduce((sum, km) => sum + km.distance, 0);
+            csvContent += `\n"TOTAL","","${totalKm.toFixed(1)}"`;
+            
+            // Télécharger le fichier
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `kilometres_${fromDate || 'debut'}_${toDate || 'fin'}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
         
     </script>
