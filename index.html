@@ -148,7 +148,7 @@
             background: white;
             color: #2c3e50;
             font-size: 14px;
-            min-width: 200px;
+            min-width: 300px;
         }
 
         .client-selector select option.overdue {
@@ -810,7 +810,7 @@
         }
 
         .todo-list {
-            max-height: 650px;
+            max-height: 610px;
             overflow-y: auto;
         }
 
@@ -1430,6 +1430,15 @@
             opacity: 1;
         }
 
+        .dropdown-item:hover {
+            background: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -1566,9 +1575,16 @@
             <div class="controls">
                 <input type="date" id="dateInput" />
                 <button class="btn btn-success" onclick="addDate()">Ajouter date</button>
-                <button class="btn" onclick="openFamilyModal()">Ajouter famille</button>
-                <button class="btn" onclick="openOperationModal()">Ajouter opération</button>
-                <button class="btn" onclick="openCopyModal()" style="background: #9b59b6;">Copier éléments</button>
+                <div class="dropdown" style="position: relative; display: inline-block;">
+                    <button class="btn" onclick="toggleActionsMenu()" id="actionsBtn">
+                        Actions ▼
+                    </button>
+                    <div id="actionsMenu" class="dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1000; min-width: 180px;">
+                        <div class="dropdown-item" onclick="selectAction('addFamily')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px;">➕ Ajouter famille</div>
+                        <div class="dropdown-item" onclick="selectAction('addOperation')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px;">⚙️ Ajouter opération</div>
+                        <div class="dropdown-item" onclick="selectAction('copyElements')" style="padding: 8px 12px; cursor: pointer; font-size: 14px;">📋 Copier éléments</div>
+                    </div>
+                </div>
                 <button class="btn" onclick="openPeriodsModal()" style="background: #34495e;">📊 Dashboard Périodes</button>
                 <button class="btn btn-todo" onclick="openTodoModal()" id="todoBtn">
                     📝 Todo List
@@ -2770,6 +2786,46 @@
         }
 
         // ============ FIN GESTION FICHE CLIENT DÉTAILLÉE ============
+
+// Gestion du menu déroulant Actions
+        function toggleActionsMenu() {
+            const menu = document.getElementById('actionsMenu');
+            const isVisible = menu.style.display === 'block';
+            
+            // Fermer tous les autres menus ouverts
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            
+            // Toggle le menu actuel
+            menu.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function selectAction(action) {
+            // Fermer le menu
+            document.getElementById('actionsMenu').style.display = 'none';
+            
+            // Exécuter l'action
+            switch (action) {
+                case 'addFamily':
+                    openFamilyModal();
+                    break;
+                case 'addOperation':
+                    openOperationModal();
+                    break;
+                case 'copyElements':
+                    openCopyModal();
+                    break;
+            }
+        }
+
+        // Fermer le menu si on clique ailleurs
+        document.addEventListener('click', function(event) {
+            const dropdown = event.target.closest('.dropdown');
+            if (!dropdown) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
 
         // Gestion de l'authentification
         function checkPassword() {
