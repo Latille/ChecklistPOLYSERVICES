@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checklist POLYSERVICES</title>
+    <link rel="icon" type="image/png" href="faviconPoly.png">
     <style>
         * {
             margin: 0;
@@ -119,9 +120,9 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(135deg, #F2F2F2 0%, #D9D9D9 100%);
             color: white;
-            padding: 20px 30px;
+            padding: 10px 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -139,6 +140,10 @@
             align-items: center;
             gap: 15px;
             flex-wrap: wrap;
+        }
+
+        .client-selector label {
+            color: black;
         }
 
         .client-selector select {
@@ -219,7 +224,7 @@
         }
 
         .controls {
-            padding: 20px 30px;
+            padding: 15px 15px;
             background: #f8f9fa;
             border-bottom: 1px solid #e9ecef;
             display: flex;
@@ -259,7 +264,7 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            height: 100px;
+            height: 90px;
         }
 
         .operations-column {
@@ -283,7 +288,7 @@
             text-orientation: mixed;
             transform: rotate(180deg);
             white-space: nowrap;
-            height: 100px;
+            height: 90px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1561,7 +1566,9 @@
     <div id="appContent" class="app-content">
         <div class="container">
             <div class="header">
-                <div class="title">Checklist POLYSERVICES</div>
+                <div class="title">
+                    <img src="logo-polyservices.png" alt="POLYSERVICES 79" style="height: 50px;">
+                </div>
                 <div class="client-selector">
                     <label for="clientSelect">Client :</label>
                     <select id="clientSelect">
