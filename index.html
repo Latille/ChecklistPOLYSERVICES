@@ -5763,7 +5763,7 @@
                 html += '</tr>';
                 
                 // Lignes d'opérations (style opération) - affichage conditionnel
-                clientData.operations.forEach(operation => {
+                clientData.operations.sort((a, b) => a.name.localeCompare(b.name)).forEach(operation => {
                     const operationStyle = isCollapsed ? 'display: none;' : '';
                     html += `
                         <tr class="client-operation-row ${isCollapsed ? 'hidden' : ''}" style="height: 20px; ${operationStyle}">
