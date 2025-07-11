@@ -1444,6 +1444,176 @@
             border-bottom: none;
         }
         
+        /* Styles pour l'éditeur comptabilité */
+                .format-btn {
+                    background: white;
+                    border: 1px solid #ddd;
+                    border-radius: 3px;
+                    padding: 4px 8px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    min-width: 28px;
+                    height: 28px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s ease;
+                }
+
+                .format-btn:hover {
+                    background: #f0f0f0;
+                    border-color: #3498db;
+                }
+
+                .format-btn.active {
+                    background: #3498db;
+                    color: white;
+                    border-color: #3498db;
+                }
+
+                .underline-option:hover {
+                    background: #f8f9fa;
+                }
+
+                #comptabiliteEditor:empty:before {
+                    content: attr(placeholder);
+                    color: #999;
+                    font-style: italic;
+                }
+
+                #comptabiliteEditor:focus {
+                    outline: 2px solid #3498db;
+                    outline-offset: -2px;
+                }
+
+                /* Styles pour les tableaux dans l'éditeur */
+                #comptabiliteEditor table {
+                    border-collapse: separate;
+                    border-spacing: 0;
+                    border: 1px solid #ddd;
+                    margin: 10px 0;
+                    width: auto;
+                    table-layout: fixed;
+                }
+
+                #comptabiliteEditor table td, 
+                #comptabiliteEditor table th {
+                    border-right: 1px solid #ddd;
+                    border-bottom: 1px solid #ddd;
+                    padding: 4px 8px;
+                    text-align: left;
+                    min-width: 80px;
+                    line-height: 1.2;
+                    height: 24px;
+                    box-sizing: border-box;
+                    overflow: hidden;
+                    word-wrap: break-word;
+                }
+
+                #comptabiliteEditor table td:last-child,
+                #comptabiliteEditor table th:last-child {
+                    border-right: none;
+                }
+
+                #comptabiliteEditor table tr:last-child td {
+                    border-bottom: none;
+                }
+
+                #comptabiliteEditor table th {
+                    background: #f8f9fa;
+                    font-weight: bold;
+                    height: 32px;
+                    border-bottom: 2px solid #ddd;
+                }
+
+                #comptabiliteEditor table th {
+                    background: #f8f9fa;
+                    font-weight: bold;
+                }
+
+                #comptabiliteEditor table tr:nth-child(even) {
+                    background: #f9f9f9;
+                }
+
+                /* Contrôles de redimensionnement des tableaux */
+                .table-controls {
+                    position: absolute;
+                    background: white;
+                    border: 1px solid #3498db;
+                    border-radius: 4px;
+                    padding: 6px;
+                    display: none;
+                    z-index: 1001;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    min-width: 200px;
+                                }
+
+                .table-btn {
+                    background: #3498db;
+                    color: white;
+                    border: none;
+                    padding: 2px 6px;
+                    margin: 1px;
+                    border-radius: 2px;
+                    cursor: pointer;
+                    font-size: 10px;
+                }
+
+                .table-btn:hover {
+                    background: #2980b9;
+                }
+
+                .resize-handle {
+                    position: absolute;
+                    background: #3498db;
+                    opacity: 0;
+                    transition: opacity 0.2s;
+                }
+
+                .resize-handle:hover {
+                    opacity: 0.7;
+                }
+
+                .resize-handle.vertical {
+                    width: 3px;
+                    height: 100%;
+                    right: -1px;
+                    top: 0;
+                    cursor: col-resize;
+                }
+
+                .resize-handle.horizontal {
+                    width: 100%;
+                    height: 3px;
+                    bottom: -1px;
+                    left: 0;
+                    cursor: row-resize;
+                }
+
+                #comptabiliteEditor table {
+                    position: relative;
+                }
+
+                #comptabiliteEditor table td, #comptabiliteEditor table th {
+                    position: relative;
+                }
+
+                #comptabiliteEditor table.selected {
+                    outline: 2px solid #3498db;
+                }
+
+                #comptabiliteEditor table td.selected-cell, #comptabiliteEditor table th.selected-cell {
+                    background: #e3f2fd !important;
+                    outline: 1px solid #2196f3;
+                }
+
+                /* Styles soulignement couleur */
+                .underline-red { text-decoration: underline; text-decoration-color: #e74c3c; text-decoration-thickness: 2px; }
+                .underline-orange { text-decoration: underline; text-decoration-color: #f39c12; text-decoration-thickness: 2px; }
+                .underline-yellow { text-decoration: underline; text-decoration-color: #f1c40f; text-decoration-thickness: 2px; }
+                .underline-green { text-decoration: underline; text-decoration-color: #27ae60; text-decoration-thickness: 2px; }
+                .underline-blue { text-decoration: underline; text-decoration-color: #3498db; text-decoration-thickness: 2px; }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -1603,6 +1773,9 @@
                 </button>
                 <button class="btn" onclick="openKilometersModal()" id="kilometersBtn" style="background: #e67e22;">
                     🚗 Kilomètres
+                </button>
+                <button class="btn" onclick="openComptabiliteModal()" id="comptabiliteBtn" style="background: #16a085;">
+                    💰 Comptabilité
                 </button>
             </div>
 
@@ -2588,6 +2761,110 @@
         </div>
     </div>
 
+    <!-- Modal Comptabilité -->
+        <div id="comptabiliteModal" class="modal">
+            <div class="modal-content" style="margin: 2% auto; width: 95%; max-width: 1400px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3 id="comptabiliteModalTitle">💰 Comptabilité - Sélectionnez un client</h3>
+                    <span class="close" onclick="closeModal('comptabiliteModal')">&times;</span>
+                </div>
+                
+                <!-- Barre d'outils de formatage -->
+                <div id="comptabiliteToolbar" style="display: none; background: #f8f9fa; padding: 10px; border-bottom: 1px solid #e9ecef; border-radius: 6px 6px 0 0;">
+                    <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                        <!-- Formatage de base -->
+                        <button type="button" class="format-btn" onclick="formatText('bold')" title="Gras">
+                            <strong>B</strong>
+                        </button>
+                        <button type="button" class="format-btn" onclick="formatText('italic')" title="Italique">
+                            <em>I</em>
+                        </button>
+                        
+                        <!-- Menu soulignement couleur -->
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="format-btn" onclick="toggleUnderlineMenu()" title="Soulignement couleur">
+                                <u>U</u> ▼
+                            </button>
+                            <div id="underlineMenu" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 1000; min-width: 180px;">
+                                <div class="underline-option" onclick="applyUnderline('none')" style="padding: 6px 10px; cursor: pointer; font-size: 12px;">Aucun soulignement</div>
+                                <div class="underline-option" onclick="applyUnderline('red')" style="padding: 6px 10px; cursor: pointer; font-size: 12px; text-decoration: underline; text-decoration-color: #e74c3c;">🔴 Urgent</div>
+                                <div class="underline-option" onclick="applyUnderline('orange')" style="padding: 6px 10px; cursor: pointer; font-size: 12px; text-decoration: underline; text-decoration-color: #f39c12;">🟠 Relance</div>
+                                <div class="underline-option" onclick="applyUnderline('yellow')" style="padding: 6px 10px; cursor: pointer; font-size: 12px; text-decoration: underline; text-decoration-color: #f1c40f;">🟡 Attente</div>
+                                <div class="underline-option" onclick="applyUnderline('green')" style="padding: 6px 10px; cursor: pointer; font-size: 12px; text-decoration: underline; text-decoration-color: #27ae60;">🟢 Validé</div>
+                                <div class="underline-option" onclick="applyUnderline('blue')" style="padding: 6px 10px; cursor: pointer; font-size: 12px; text-decoration: underline; text-decoration-color: #3498db;">🔵 Information</div>
+                            </div>
+                        </div>
+                        
+                        <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></div>
+                        
+                        <!-- Taille du texte -->
+                        <button type="button" class="format-btn" onclick="formatText('decreaseFontSize')" title="Diminuer taille">T-</button>
+                        <button type="button" class="format-btn" onclick="formatText('increaseFontSize')" title="Augmenter taille">T+</button>
+                        
+                        <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></div>
+                        
+                        <!-- Couleur du texte -->
+                        <select onchange="changeTextColor(this.value)" style="padding: 4px; border-radius: 3px; border: 1px solid #ddd; font-size: 12px;">
+                            <option value="">Couleur texte</option>
+                            <option value="black" style="color: black;">⚫ Noir</option>
+                            <option value="#e74c3c" style="color: #e74c3c;">🔴 Rouge</option>
+                            <option value="#27ae60" style="color: #27ae60;">🟢 Vert</option>
+                            <option value="#3498db" style="color: #3498db;">🔵 Bleu</option>
+                            <option value="#f39c12" style="color: #f39c12;">🟠 Orange</option>
+                            <option value="#9b59b6" style="color: #9b59b6;">🟣 Violet</option>
+                        </select>
+                        
+                        <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></div>
+                        
+                        <!-- Tableaux -->
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="format-btn" onclick="toggleTableMenu()" title="Insérer tableau">
+                                📊 ▼
+                            </button>
+                            <div id="tableMenu" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 1000; padding: 10px;">
+                                <div style="margin-bottom: 8px; font-weight: bold; font-size: 12px;">Insérer tableau :</div>
+                                <div id="tableGrid" style="display: grid; grid-template-columns: repeat(5, 20px); gap: 2px; margin-bottom: 8px;">
+                                    <!-- Grille générée par JS -->
+                                </div>
+                                <div style="font-size: 11px; color: #666;">Cliquez pour sélectionner la taille</div>
+                            </div>
+                        </div>
+                        
+                        <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></div>
+                        
+                        <!-- Actions -->
+                        <button type="button" class="format-btn" onclick="formatText('undo')" title="Annuler">↶</button>
+                        <button type="button" class="format-btn" onclick="formatText('redo')" title="Refaire">↷</button>
+                        
+                        <div style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></div>
+                        
+                        <button type="button" class="btn btn-success" onclick="saveComptabilite()" style="padding: 4px 12px; font-size: 12px;">💾 Sauvegarder</button>
+                    </div>
+                </div>
+                
+                <!-- Zone d'édition -->
+                <div id="comptabiliteEditor" style="display: none; min-height: 500px; border: 1px solid #ddd; padding: 20px; background: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; line-height: 1.6;" contenteditable="true" placeholder="Saisissez vos informations comptables...">
+                    <p><strong>INFORMATIONS COMPTABLES</strong></p>
+                    <p>Cliquez ici pour commencer à saisir vos données comptables...</p>
+                </div>
+                
+                <!-- Message quand aucun client sélectionné -->
+                <div id="comptabiliteNoClient" style="text-align: center; padding: 60px 40px; color: #666;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">💰</div>
+                    <h3>Gestion comptable par client</h3>
+                    <p style="font-size: 16px; margin-bottom: 25px; line-height: 1.5;">
+                        Sélectionnez un client dans le menu déroulant principal<br>
+                        pour gérer ses informations comptables.
+                    </p>
+                    <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid #16a085; margin: 20px auto; max-width: 400px;">
+                        <p style="margin: 0; font-size: 14px; color: #2c3e50;">
+                            💡 <strong>Fonctionnalités :</strong> Tableaux, formatage, couleurs, sauvegarde automatique !
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     
@@ -3547,8 +3824,8 @@
         // Pour économiser l'espace, je vais juste ajouter la partie manquante essentielle pour compléter le script
         
         function getClientData() {
-            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [], notes: [], clientDetails: {}, kilometers: [] };
-            
+            if (!appData.currentClient) return { families: [], operations: [], tasks: {}, dates: [], todos: [], notes: [], clientDetails: {}, kilometers: [], comptabilite: {} };
+
             if (!appData.clientData[appData.currentClient]) {
                 appData.clientData[appData.currentClient] = {
                     families: [],
@@ -3577,6 +3854,11 @@
                 appData.clientData[appData.currentClient].kilometers = [];
             }
             
+            // S'assurer que comptabilite existe
+            if (!appData.clientData[appData.currentClient].comptabilite) {
+                appData.clientData[appData.currentClient].comptabilite = {};
+            }
+
             return appData.clientData[appData.currentClient];
         }
 
@@ -6101,6 +6383,613 @@
             closeModal('alertsModal');
             openTodoModal();
         }
+
+        // ============ GESTION COMPTABILITÉ ============
+
+        function openComptabiliteModal() {
+            document.getElementById('comptabiliteModal').style.display = 'block';
+            updateComptabiliteModal();
+        }
+
+        function updateComptabiliteModal() {
+            const titleElement = document.getElementById('comptabiliteModalTitle');
+            const toolbar = document.getElementById('comptabiliteToolbar');
+            const editor = document.getElementById('comptabiliteEditor');
+            const noClientDiv = document.getElementById('comptabiliteNoClient');
+            
+            // Récupérer le client sélectionné depuis le menu principal
+            const clientSelect = document.getElementById('clientSelect');
+            const selectedClientId = clientSelect.value;
+            
+            if (!selectedClientId || selectedClientId === "" || selectedClientId === null) {
+                titleElement.textContent = '💰 Comptabilité - Sélectionnez un client';
+                toolbar.style.display = 'none';
+                editor.style.display = 'none';
+                noClientDiv.style.display = 'block';
+                return;
+            }
+
+            // S'assurer que appData.currentClient est synchronisé
+            appData.currentClient = selectedClientId;
+            
+            const client = appData.clients.find(c => c.id == selectedClientId);
+            titleElement.textContent = `💰 Comptabilité - ${client ? client.name : 'Client'}`;
+            toolbar.style.display = 'block';
+            editor.style.display = 'block';
+            noClientDiv.style.display = 'none';
+            
+            // Charger le contenu existant
+            loadComptabiliteContent();
+            
+            // Initialiser la grille de tableaux
+            initTableGrid();
+        }
+
+        function loadComptabiliteContent() {
+            const clientData = getClientData();
+            const editor = document.getElementById('comptabiliteEditor');
+            
+            if (clientData.comptabilite && clientData.comptabilite.content) {
+                editor.innerHTML = clientData.comptabilite.content;
+            } else {
+                editor.innerHTML = `
+                    <p><strong>INFORMATIONS COMPTABLES</strong></p>
+                    <p>Cliquez ici pour commencer à saisir vos données comptables...</p>
+                `;
+            }
+        }
+
+        function formatText(command) {
+            const editor = document.getElementById('comptabiliteEditor');
+            editor.focus();
+            
+            switch(command) {
+                case 'bold':
+                case 'italic':
+                case 'underline':
+                    document.execCommand(command, false, null);
+                    break;
+                case 'increaseFontSize':
+                    document.execCommand('fontSize', false, '4');
+                    break;
+                case 'decreaseFontSize':
+                    document.execCommand('fontSize', false, '2');
+                    break;
+                case 'undo':
+                    document.execCommand('undo', false, null);
+                    break;
+                case 'redo':
+                    document.execCommand('redo', false, null);
+                    break;
+            }
+        }
+
+        function toggleUnderlineMenu() {
+            const menu = document.getElementById('underlineMenu');
+            const isVisible = menu.style.display === 'block';
+            
+            // Fermer tous les autres menus
+            document.getElementById('tableMenu').style.display = 'none';
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function applyUnderline(color) {
+            const editor = document.getElementById('comptabiliteEditor');
+            const selection = window.getSelection();
+            
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const selectedText = range.toString();
+                
+                if (selectedText) {
+                    const span = document.createElement('span');
+                    
+                    if (color === 'none') {
+                        span.style.textDecoration = 'none';
+                        span.className = '';
+                    } else {
+                        span.className = `underline-${color}`;
+                    }
+                    
+                    try {
+                        range.surroundContents(span);
+                    } catch (e) {
+                        // Si la sélection contient des éléments complexes
+                        span.innerHTML = selectedText;
+                        range.deleteContents();
+                        range.insertNode(span);
+                    }
+                }
+            }
+            
+            document.getElementById('underlineMenu').style.display = 'none';
+            editor.focus();
+        }
+
+        function changeTextColor(color) {
+            if (color) {
+                document.execCommand('foreColor', false, color);
+                document.getElementById('comptabiliteEditor').focus();
+            }
+            // Remettre le select à sa valeur par défaut
+            event.target.value = '';
+        }
+
+        function toggleTableMenu() {
+            const menu = document.getElementById('tableMenu');
+            const isVisible = menu.style.display === 'block';
+            
+            // Fermer tous les autres menus
+            document.getElementById('underlineMenu').style.display = 'none';
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function initTableGrid() {
+            const grid = document.getElementById('tableGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 1; i <= 25; i++) {
+                const cell = document.createElement('div');
+                cell.style.cssText = `
+                    width: 18px; 
+                    height: 18px; 
+                    border: 1px solid #ddd; 
+                    cursor: pointer;
+                    background: white;
+                `;
+                
+                const row = Math.ceil(i / 5);
+                const col = ((i - 1) % 5) + 1;
+                
+                cell.onmouseover = function() {
+                    highlightTableGrid(row, col);
+                };
+                
+                cell.onclick = function() {
+                    insertTable(row, col);
+                    document.getElementById('tableMenu').style.display = 'none';
+                };
+                
+                grid.appendChild(cell);
+            }
+        }
+
+        function highlightTableGrid(maxRow, maxCol) {
+            const cells = document.querySelectorAll('#tableGrid div');
+            cells.forEach((cell, index) => {
+                const row = Math.ceil((index + 1) / 5);
+                const col = ((index) % 5) + 1;
+                
+                if (row <= maxRow && col <= maxCol) {
+                    cell.style.background = '#3498db';
+                } else {
+                    cell.style.background = 'white';
+                }
+            });
+        }
+
+        function insertTable(rows, cols) {
+            const editor = document.getElementById('comptabiliteEditor');
+            editor.focus();
+            
+            let tableHTML = '<table class="editable-table" onclick="selectTable(this)">';
+            
+            // En-tête
+            tableHTML += '<tr>';
+            for (let j = 1; j <= cols; j++) {
+                 tableHTML += `<th onclick="selectCell(this)" style="width: 120px;">Colonne ${j}</th>`;
+             }
+            tableHTML += '</tr>';
+            
+            // Lignes de données
+            for (let i = 1; i < rows; i++) {
+                tableHTML += '<tr>';
+                for (let j = 1; j <= cols; j++) {
+                    tableHTML += '<td onclick="selectCell(this)">&nbsp;</td>';
+                }
+                tableHTML += '</tr>';
+            }
+            
+            tableHTML += '</table><p>&nbsp;</p>';
+            
+            document.execCommand('insertHTML', false, tableHTML);
+            
+            // Ajouter les contrôles après insertion
+            setTimeout(() => {
+                addTableControls();
+            }, 100);
+        }
+
+        function saveComptabilite() {
+            if (!appData.currentClient) {
+                alert('Aucun client sélectionné');
+                return;
+            }
+            
+            const editor = document.getElementById('comptabiliteEditor');
+            const content = editor.innerHTML;
+            
+            const clientData = getClientData();
+            if (!clientData.comptabilite) {
+                clientData.comptabilite = {};
+            }
+            
+            clientData.comptabilite.content = content;
+            clientData.comptabilite.lastModified = new Date().toISOString();
+            
+            // Afficher une confirmation temporaire
+            const saveBtn = event.target;
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '✅ Sauvegardé';
+            saveBtn.style.background = '#27ae60';
+            
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.style.background = '';
+            }, 2000);
+            
+            saveToFirestore();
+        }
+
+        // ============ GESTION TABLEAUX AVANCÉE ============
+        
+        let selectedTable = null;
+        let selectedCell = null;
+
+        function selectTable(table) {
+            // Désélectionner l'ancien tableau
+            if (selectedTable) {
+                selectedTable.classList.remove('selected');
+            }
+            
+            selectedTable = table;
+            table.classList.add('selected');
+            showTableControls(table);
+            event.stopPropagation();
+        }
+
+        function selectCell(cell) {
+            // Désélectionner l'ancienne cellule
+            if (selectedCell) {
+                selectedCell.classList.remove('selected-cell');
+            }
+            
+            selectedCell = cell;
+            cell.classList.add('selected-cell');
+            showCellControls(cell);
+            event.stopPropagation();
+        }
+
+        function showTableControls(table) {
+            hideAllControls();
+            
+            const controls = document.createElement('div');
+            controls.className = 'table-controls';
+            controls.id = 'tableControls';
+            controls.innerHTML = `
+                <button class="table-btn" onclick="addTableRow()">+ Ligne</button>
+                <button class="table-btn" onclick="removeTableRow()">- Ligne</button>
+                <button class="table-btn" onclick="addTableCol()">+ Colonne</button>
+                <button class="table-btn" onclick="removeTableCol()">- Colonne</button>
+            `;
+            
+            const rect = table.getBoundingClientRect();
+            const editorRect = document.getElementById('comptabiliteEditor').getBoundingClientRect();
+            
+            controls.style.display = 'block';
+            controls.style.left = (rect.left - editorRect.left) + 'px';
+            controls.style.top = (rect.top - editorRect.top - 35) + 'px';
+            
+            document.getElementById('comptabiliteEditor').appendChild(controls);
+        }
+
+        function showCellControls(cell) {
+            let existingControls = document.getElementById('cellControls');
+            if (existingControls) existingControls.remove();
+            
+            const controls = document.createElement('div');
+            controls.className = 'table-controls';
+            controls.id = 'cellControls';
+            controls.innerHTML = `
+                <div style="margin-bottom: 4px;">
+                    <button class="table-btn" onclick="addRowBefore()">↑+ Ligne</button>
+                    <button class="table-btn" onclick="addRowAfter()">↓+ Ligne</button>
+                    <button class="table-btn" onclick="deleteCurrentRow()">🗑️ Ligne</button>
+                </div>
+                <div style="margin-bottom: 4px;">
+                    <button class="table-btn" onclick="addColBefore()">←+ Col</button>
+                    <button class="table-btn" onclick="addColAfter()">→+ Col</button>
+                    <button class="table-btn" onclick="deleteCurrentCol()">🗑️ Col</button>
+                </div>
+                <div>
+                    <button class="table-btn" onclick="adjustCellWidth(-10)">W-</button>
+                    <button class="table-btn" onclick="adjustCellWidth(10)">W+</button>
+                    <button class="table-btn" onclick="adjustCellHeight(-4)">H-</button>
+                    <button class="table-btn" onclick="adjustCellHeight(4)">H+</button>
+                </div>
+            `;
+            
+            const rect = cell.getBoundingClientRect();
+            const editorRect = document.getElementById('comptabiliteEditor').getBoundingClientRect();
+            
+            controls.style.display = 'block';
+            controls.style.left = (rect.right - editorRect.left) + 'px';
+            controls.style.top = (rect.top - editorRect.top - 35) + 'px';
+            
+            document.getElementById('comptabiliteEditor').appendChild(controls);
+        }
+
+        function hideAllControls() {
+            const tableControls = document.getElementById('tableControls');
+            const cellControls = document.getElementById('cellControls');
+            if (tableControls) tableControls.remove();
+            if (cellControls) cellControls.remove();
+        }
+
+        function addTableRow() {
+            if (!selectedTable) return;
+            
+            const newRow = selectedTable.insertRow(-1);
+            const colCount = selectedTable.rows[0].cells.length;
+            
+            for (let i = 0; i < colCount; i++) {
+                const cell = newRow.insertCell();
+                cell.innerHTML = '&nbsp;';
+                cell.onclick = function() { selectCell(this); };
+                cell.style.height = '24px';
+            }
+        }
+
+        function removeTableRow() {
+            if (!selectedTable || selectedTable.rows.length <= 1) return;
+            selectedTable.deleteRow(-1);
+        }
+
+        function addTableCol() {
+            if (!selectedTable) return;
+            
+            for (let i = 0; i < selectedTable.rows.length; i++) {
+                const cell = selectedTable.rows[i].insertCell();
+                cell.innerHTML = i === 0 ? 'Nouvelle Col' : '&nbsp;';
+                cell.onclick = function() { selectCell(this); };
+                if (i === 0) {
+                    cell.style.width = '120px';
+                    cell.style.height = '32px';
+                } else {
+                    cell.style.height = '24px';
+                }
+            }
+        }
+
+        function removeTableCol() {
+            if (!selectedTable) return;
+            
+            const colCount = selectedTable.rows[0].cells.length;
+            if (colCount <= 1) return;
+            
+            for (let i = 0; i < selectedTable.rows.length; i++) {
+                selectedTable.rows[i].deleteCell(-1);
+            }
+        }
+
+        function adjustCellWidth(delta) {
+            if (!selectedCell) return;
+            
+            const currentWidth = parseInt(selectedCell.style.width) || 120;
+            const newWidth = Math.max(50, currentWidth + delta);
+            
+            // Appliquer à toute la colonne
+            const cellIndex = selectedCell.cellIndex;
+            const table = selectedCell.closest('table');
+            
+            for (let i = 0; i < table.rows.length; i++) {
+                if (table.rows[i].cells[cellIndex]) {
+                    table.rows[i].cells[cellIndex].style.width = newWidth + 'px';
+                }
+            }
+            
+            // Recalculer la largeur totale du tableau
+            updateTableWidth(table);
+        }
+
+        function adjustCellHeight(delta) {
+            if (!selectedCell) return;
+            
+            const currentHeight = parseInt(selectedCell.style.height) || 24;
+            const newHeight = Math.max(16, currentHeight + delta);
+            
+            // Appliquer à toute la ligne
+            const row = selectedCell.closest('tr');
+            for (let i = 0; i < row.cells.length; i++) {
+                row.cells[i].style.height = newHeight + 'px';
+            }
+        }
+
+        function updateTableWidth(table) {
+            let totalWidth = 0;
+            const firstRow = table.rows[0];
+            
+            for (let i = 0; i < firstRow.cells.length; i++) {
+                const cellWidth = parseInt(firstRow.cells[i].style.width) || 120;
+                totalWidth += cellWidth;
+            }
+            
+            table.style.width = totalWidth + 'px';
+        }
+
+        // ============ FONCTIONS AVANCÉES LIGNES/COLONNES ============
+
+        function addRowBefore() {
+            if (!selectedCell) return;
+            
+            const table = selectedCell.closest('table');
+            const currentRow = selectedCell.closest('tr');
+            const rowIndex = currentRow.rowIndex;
+            const colCount = table.rows[0].cells.length;
+            
+            const newRow = table.insertRow(rowIndex);
+            
+            for (let i = 0; i < colCount; i++) {
+                const cell = newRow.insertCell();
+                cell.innerHTML = '&nbsp;';
+                cell.onclick = function() { selectCell(this); };
+                
+                // Copier la largeur de la colonne correspondante
+                const referenceCell = table.rows[0].cells[i];
+                const width = referenceCell.style.width || '120px';
+                cell.style.width = width;
+            }
+        }
+
+        function addRowAfter() {
+            if (!selectedCell) return;
+            
+            const table = selectedCell.closest('table');
+            const currentRow = selectedCell.closest('tr');
+            const rowIndex = currentRow.rowIndex + 1;
+            const colCount = table.rows[0].cells.length;
+            
+            const newRow = table.insertRow(rowIndex);
+            
+            for (let i = 0; i < colCount; i++) {
+                const cell = newRow.insertCell();
+                cell.innerHTML = '&nbsp;';
+                cell.onclick = function() { selectCell(this); };
+                
+                // Copier la largeur de la colonne correspondante
+                const referenceCell = table.rows[0].cells[i];
+                const width = referenceCell.style.width || '120px';
+                cell.style.width = width;
+            }
+        }
+
+        function deleteCurrentRow() {
+            if (!selectedCell) return;
+            
+            const table = selectedCell.closest('table');
+            const currentRow = selectedCell.closest('tr');
+            
+            // Vérifier qu'il reste au moins 1 ligne
+            if (table.rows.length <= 1) {
+                alert('Impossible de supprimer la dernière ligne du tableau');
+                return;
+            }
+            
+            if (confirm('Supprimer cette ligne ?')) {
+                currentRow.remove();
+                hideAllControls();
+                selectedCell = null;
+            }
+        }
+
+        function addColBefore() {
+            if (!selectedCell) return;
+            
+            const table = selectedCell.closest('table');
+            const cellIndex = selectedCell.cellIndex;
+            
+            for (let i = 0; i < table.rows.length; i++) {
+                const row = table.rows[i];
+                const newCell = row.insertCell(cellIndex);
+                
+                if (i === 0) {
+                    // En-tête
+                    newCell.innerHTML = 'Nouvelle Col';
+                    newCell.style.width = '120px';
+                    newCell.style.height = '32px';
+                } else {
+                    // Cellule normale
+                    newCell.innerHTML = '&nbsp;';
+                    newCell.style.height = '24px';
+                    newCell.style.width = '120px';
+                }
+                
+                newCell.onclick = function() { selectCell(this); };
+            }
+            
+            updateTableWidth(table);
+        }
+
+        function addColAfter() {
+            if (!selectedCell) return;
+            
+            const table = selectedCell.closest('table');
+            const cellIndex = selectedCell.cellIndex + 1;
+            
+            for (let i = 0; i < table.rows.length; i++) {
+                const row = table.rows[i];
+                const newCell = row.insertCell(cellIndex);
+                
+                if (i === 0) {
+                    // En-tête
+                    newCell.innerHTML = 'Nouvelle Col';
+                    newCell.style.width = '120px';
+                    newCell.style.height = '32px';
+                } else {
+                    // Cellule normale
+                    newCell.innerHTML = '&nbsp;';
+                    newCell.style.height = '24px';
+                    newCell.style.width = '120px';
+                }
+                
+                newCell.onclick = function() { selectCell(this); };
+            }
+            
+            updateTableWidth(table);
+        }
+
+        function deleteCurrentCol() {
+            if (!selectedCell) return;
+            
+            const table = selectedCell.closest('table');
+            const cellIndex = selectedCell.cellIndex;
+            
+            // Vérifier qu'il reste au moins 1 colonne
+            if (table.rows[0].cells.length <= 1) {
+                alert('Impossible de supprimer la dernière colonne du tableau');
+                return;
+            }
+            
+            if (confirm('Supprimer cette colonne ?')) {
+                for (let i = 0; i < table.rows.length; i++) {
+                    table.rows[i].deleteCell(cellIndex);
+                }
+                
+                updateTableWidth(table);
+                hideAllControls();
+                selectedCell = null;
+            }
+        }
+
+        function addTableControls() {
+            const editor = document.getElementById('comptabiliteEditor');
+            
+            // Cacher les contrôles quand on clique ailleurs
+            editor.addEventListener('click', function(e) {
+                if (!e.target.closest('table') && !e.target.closest('.table-controls')) {
+                    hideAllControls();
+                    if (selectedTable) {
+                        selectedTable.classList.remove('selected');
+                        selectedTable = null;
+                    }
+                    if (selectedCell) {
+                        selectedCell.classList.remove('selected-cell');
+                        selectedCell = null;
+                    }
+                }
+            });
+        }
+
+
+        // Fermer les menus déroulants si on clique ailleurs
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('#comptabiliteToolbar')) {
+                document.getElementById('underlineMenu').style.display = 'none';
+                document.getElementById('tableMenu').style.display = 'none';
+            }
+        });
 
         // ============ GESTION KILOMÈTRES ============
 
